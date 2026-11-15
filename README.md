@@ -4,6 +4,8 @@
 
 현대자동차그룹 차량용 앱 개발 공모전 출품작이며, Pleos Connect 환경에서 동작합니다.
 
+시연 영상: https://www.youtube.com/playlist?list=PLJmxULw_JW68
+
 ## 무엇을 하나요
 
 | 단계 | 하는 일 |
