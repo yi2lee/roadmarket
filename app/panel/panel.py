@@ -9,7 +9,7 @@ CARS = ("A", "B")
 POS = {"A": ("37.4127", "127.0947"), "B": ("37.4250", "127.1000")}
 MYCAR = {"A": ("흰색 SUV", "1204"), "B": ("검은색 세단", "7788")}
 NOARG = {"door", "open", "navi", "near", "request", "request-other", "request-silent",
-         "withdraw", "peer-cancel", "dest", "dest-clear", "reset", "spoken"}
+         "withdraw", "peer-cancel", "urgent", "seed", "route", "dest", "dest-clear", "reset", "spoken", "history"}
 NUM = {"gone", "seller-cancel"}
 LINE = re.compile(r"^.*?ROADMARKET_\w+\s*\(\s*\d+\):\s*")
 

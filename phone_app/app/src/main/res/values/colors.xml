@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 페이지 바탕색과 같게 맞춰요 (phone.html의 bg, text). -->
-    <color name="page_bg">#F7F8FA</color>
+    <!-- 브랜드 초록이에요. 아이콘 바탕, 시작 화면, 버튼에 써요. -->
+    <color name="brand">#04695A</color>
+    <!-- 새 페이지 바탕색과 같게 맞춰요. -->
+    <color name="page_bg">#FFFFFF</color>
     <color name="page_text">#131417</color>
-    <color name="button_bg">#131417</color>
+    <color name="button_bg">@color/brand</color>
     <color name="button_text">#FFFFFF</color>
-    <color name="icon_bg">#131417</color>
 </resources>

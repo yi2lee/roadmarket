@@ -30,7 +30,7 @@ object Theme {
         val darkDisabled: Int,    // 공식(104/102) button/filled/disabled
         val darkText: Int,        // 공식(104/102) text/light/primary
         val disabledBorder: Int,  // 비활성 버튼 2px 안쪽 테두리 — 공식(104/102) divider/secondary
-        val accent: Int,          // 파랑: 왼쪽 메뉴 표시 막대에만 — 공식(104/102) informative/positive
+        val accent: Int,          // 파랑: 왼쪽 메뉴 표시 막대와 급구 카드의 빛(Glow.kt)에만 — 공식(104/102) informative/positive
         // 스위치 (ivi_switch)
         val on: Int,              // 공식(104/102) switch/on
         val trackOff: Int,        // 공식(104/102) switch/off
@@ -90,6 +90,8 @@ object Theme {
     val BUTTON_LARGE = ButtonSize(100, 40, 16, 140, 32, Type(32, 40, 700))
     // 공식(104/102) Medium: 높이 80, 좌우 32, 위아래 16, 최소 폭 120, 모서리 24, 글자 Body/Large/Strong 30/38 Bold
     val BUTTON_MEDIUM = ButtonSize(80, 32, 16, 120, 24, Type(30, 38, 700))
+    // 공식(102) Small: 높이 64, 좌우 24, 위아래 8, 최소 폭 100, 모서리 16, 글자 Body/Small/Strong 26/34 Bold
+    val BUTTON_SMALL = ButtonSize(64, 24, 8, 100, 16, Type(26, 34, 700))
     const val BUTTON_DISABLED_BORDER = 2       // 공식(104/102) 비활성 버튼 안쪽 테두리 2px
 
     // 확인 창·입력 창 (ivi_system_popup Medium)
@@ -125,6 +127,11 @@ object Theme {
     const val MENU_WIDTH = 300                 // 임의 (왼쪽 메뉴 부품은 문서에 없음)
     const val NARROW_BELOW = 1000              // 임의: 창 가로가 이보다 좁으면 메뉴를 위 한 줄로
 
+    // 스낵바 (ivi_toast_popup은 102·104에 이름과 Margin 속성만 있고 값이 없어요). 색은 공식 Secondary 버튼 채움(dark/darkText)을 써요.
+    val SNACK = BUTTON_MEDIUM                  // 임의: 모서리 24·좌우 32·위아래 16·글자 Body/Large 30/38은 공식 Medium 버튼 값을 빌렸어요
+    const val SNACK_BOTTOM = 40                // 임의: 화면 아래에서 띄우는 거리 (SCREEN_PAD와 같아요)
+    const val SNACK_MS = 2500L                 // 임의: 저절로 사라지기까지 (2~3초 사이)
+
     // 아래는 문서에도 지시에도 없어 정한 값
     const val CARD_PAD = 32                    // 임의
     const val MENU_BAR_WIDTH = 8               // 임의: 선택된 메뉴 표시 막대
@@ -133,4 +140,12 @@ object Theme {
     const val BADGE_PAD_V = 4                  // 임의: 배지 위아래 여백
     const val ROW_BIG_MIN_HEIGHT = 180         // 임의: 달리는 중 주변 물건 세 줄을 크게 보일 때 줄 높이
     const val NARROW_ROW_PAD = 16              // 임의: 9-2 좁은 창에서 목록 세 줄이 한 화면에 들어오게 줄인 줄 안 여백
+
+    // 급구 카드의 흐르는 빛 (Glow.kt). 공식 부품에 빛 효과가 없어 모두 임의예요. 색은 accent(공식 informative/positive)를 써요.
+    const val GLOW_PERIOD_MS = 3200L           // 임의: 빛이 카드 테두리를 한 바퀴 도는 시간 (2.5~4초 사이, 번쩍임 없게 느리게)
+    const val GLOW_RING = 3                    // 임의: 빛나는 테두리 굵기. 공식 입력 칸 초점 테두리 3과 같은 굵기를 빌렸어요
+    const val GLOW_RING_BASE = 0.22f           // 임의: 빛 띠가 없는 곳의 테두리 진하기 (accent에 곱함)
+    const val GLOW_RING_PEAK = 0.85f           // 임의: 빛 띠 가운데의 테두리 진하기
+    const val GLOW_SHEEN_PEAK = 0.07f          // 임의: 카드 안쪽 바탕에 번지는 빛의 가장 진한 값
+    const val GLOW_BAND = 0.07f                // 임의: 빛 띠의 폭 (한 바퀴를 1로 볼 때의 표준편차)
 }

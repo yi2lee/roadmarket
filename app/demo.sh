@@ -57,8 +57,12 @@ case "$1" in
   gone)            [ -n "$2" ] || usage; server gone "$2" ;;   # D-08 gone 2: 2번 차가 주변에서 사라짐
   seller-cancel)   [ -n "$2" ] || usage; server seller-cancel "$2" ;;   # D-09 seller-cancel 2: 2번이 수락을 취소
   peer-cancel)     server peer-cancel ;;              # D-10 가짜 상대가 거래를 취소
+  urgent)          server urgent ;;                   # 근처 가짜 차가 급구 "유아용 카시트"를 올림
+  seed)            server seed ;;                     # 이 차의 「파는 물건」에 시연용 물건 6개 넣기 (사진 있는 것 3, 없는 것 3. 같은 이름은 건너뜀)
+  route)           server route ;;                    # 이 차에 경로 추천을 보냄
   dest)            demo dest ;;                       # D-11 내비에 데모 목적지 넣기
-  dest-clear)      demo dest-clear ;;                 # D-11 내비 길 안내 끝내기
+  history)         demo history ;;                    # D-33 「거래 내역」에 시연용 지난 거래 8건 넣기 (같은 줄은 건너뜀)
+  dest-clear)      demo dest-clear ;;                # D-11 내비 길 안내 끝내기
   gear)                                               # D-12 gear P | gear D: 기어 바꾸기
     case "$2" in
       P) console "/vehicle/gear?gear=Park" ;;

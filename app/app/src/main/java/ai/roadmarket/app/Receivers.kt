@@ -40,7 +40,8 @@ class DemoReceiver : BroadcastReceiver() {
                 val la = i.getStringExtra("lat")?.toDoubleOrNull(); val lo = i.getStringExtra("lon")?.toDoubleOrNull()
                 if (la != null && lo != null) Link.setTestPos(la, lo)
             }
-            "mycar" -> {                                                       // D-24
+            "history" -> { Deals.demoHistory(); Ui.refresh() }                // D-33 시연용 지난 거래 채우기
+            "mycar" -> {                                                    // D-24
                 val k = i.getStringExtra("kind").orEmpty().trim(); val n = i.getStringExtra("plate").orEmpty().trim()
                 if (k.isNotEmpty() && n.isNotEmpty()) Link.setCarInfo(k, n)
             }

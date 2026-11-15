@@ -12,7 +12,7 @@ class GleoReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
         val fn = (i.action ?: return).substringAfterLast('.')
         val p = try { JSONObject(i.getStringExtra("ACTION_PARAM") ?: "{}") } catch (e: Exception) { JSONObject() }
-        val r = when (fn) {
+        val r = if (!Market.gleoOn) Gleo.Reply("success", Texts.G_GLEO_OFF) else when (fn) {   // C-27: 일은 하지 않고 한 문장으로 답해요
             "ADD_ITEM" -> Gleo.addItem(p)
             "TRADE_AND_NEARBY" -> Gleo.tradeAndNearby(p)
             "DEAL_REQUEST" -> Gleo.dealRequest(p)
@@ -42,7 +42,7 @@ object Gleo {
     private var urgentAsk = ""         // 되물은 급구 일: "post"(이름), "sell"(값)
     private var urgentName = ""
     private var urgentDesc = ""
-    private var askedFor = ""          // 번호를 되물은 일: "send"(B-42), "choose"(B-50), "check"(B-52)
+    private var askedFor = ""          // 번호를 되물은 일: "send"(B-42), "choose"(B-50), "check"(B-52), "clear"(S-54)
 
     private fun str(p: JSONObject, k: String) = p.optString(k, "").trim()
 
@@ -83,11 +83,14 @@ object Gleo {
         return none()
     }
 
-    // ② 거래 알림·주변 물건 (C-05, C-07, C-09, B-26, B-27, B-52)
+    // ② 거래 알림·주변 물건 (C-05, C-07, C-09, B-26, B-27, B-52, S-54)
     fun tradeAndNearby(p: JSONObject): Reply {
         itemKind = ""
         var action = str(p, "action")
         val raw = str(p, "number")
+        val answer = str(p, "answer")
+        val clearAsked = askedFor == "clear"                                                    // S-54: "모두 지울까요?"를 물은 뒤의 답
+        if (action.isEmpty() && clearAsked && answer.isNotEmpty()) action = "sell_clear"
         if (action.isEmpty() && askedFor == "check" && numbers(raw).isNotEmpty()) action = "check"
         if (action.isEmpty() && urgentAsk == "post") action = "urgent"
         if (action.isEmpty() && urgentAsk == "sell") action = "urgent_sell"
@@ -156,6 +159,15 @@ object Gleo {
                 val r = Market.row(no) ?: return ok(Texts.gNoSuch(no))
                 return ok(if (r.gone) Texts.gNotNear(no) else Texts.gStillNear(no, r.car.minutes))
             }
+            "sell_clear" -> {                                                                   // S-54: 파는 물건 모두 지우기 (찾는 물건·급구는 그대로)
+                if (clearAsked && answer == "no") return ok(Texts.G_CLEAR_KEEP)
+                val drop = Market.sells.filter { !Market.sellBusy(it.id) }                     // 거래 중인 물건은 남겨요 (S-12)
+                val kept = Market.sells.size - drop.size
+                if (drop.isEmpty()) return ok(Texts.G_NOTHING_TO_CLEAR)
+                if (!clearAsked) { askedFor = "clear"; return ask(Texts.gClearAsk(drop.size)) } // 되돌릴 수 없어 한 번 되물어요
+                drop.forEach { Market.removeSell(it.id) }                                       // 화면의 「내리기」(S-11)와 같은 길을 하나씩
+                return ok(Texts.gCleared(drop.size, kept))
+            }
         }
         return none()
     }
@@ -169,6 +181,7 @@ object Gleo {
         askedFor = ""
         when (action) {
             "send" -> {                                                                         // B-40, B-41, B-42
+                if (Market.dealLive) return ok(Texts.DEAL_LIVE_NO_SEND)                          // H-09: 거래 중에는 보내지 않아요
                 val list = Market.nearby ?: return ok(Texts.G_NO_LIST)
                 val nos = numbers(raw)
                 if (nos.isEmpty()) {

@@ -63,7 +63,7 @@ class WatchService : Service() {
 
     private fun goForeground() {
         val n = Notification.Builder(this, CH_WAIT)
-            .setSmallIcon(R.drawable.ic_launcher_fg)
+            .setSmallIcon(R.drawable.ic_stat_mark)
             .setContentText(getString(R.string.watch_text))
             .setContentIntent(openApp(this))
             .setOngoing(true)
@@ -196,7 +196,7 @@ class WatchService : Service() {
 
     private fun show(kind: String, id: String, title: String, text: String) {
         val n = Notification.Builder(this, CH_EVENT)
-            .setSmallIcon(R.drawable.ic_launcher_fg)
+            .setSmallIcon(R.drawable.ic_stat_mark)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(Notification.BigTextStyle().bigText(text))

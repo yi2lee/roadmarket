@@ -44,6 +44,7 @@ object Voice {
     }
 
     fun say(sentence: String) {
+        if (!Market.gleoOn) { Log.i("ROADMARKET_SAY_MUTED", sentence); return }   // C-26: 설정에서 글레오를 끄면 화면에만 보여요
         Log.i("ROADMARKET_SAY", sentence)
         queue.addLast(sentence)
         next()

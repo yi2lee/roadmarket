@@ -32,6 +32,7 @@ textarea{width:100%;font:inherit;border-radius:12px;border:2px solid var(--btn);
     <button data-car="A" class="sel">A (파는 차)</button>
     <button data-car="B">B (사는 차)</button>
   </div>
+  <p class="d"><a href="http://localhost:8099/phone" target="_blank" rel="noopener">폰 화면: http://localhost:8099/phone</a></p>
 </section>
 
 <section>
@@ -65,7 +66,9 @@ textarea{width:100%;font:inherit;border-radius:12px;border:2px solid var(--btn);
 <section>
   <h2>가짜 상대 차 (혼자 볼 때)</h2>
   <div class="col">
-    <button data-cmd="near">주변에 파는 차 다섯 대 보내기</button>
+    <button data-cmd="near">주변에 파는 차 열두 대 보내기</button>
+    <button data-cmd="seed">파는 물건 채우기</button>
+    <p class="d" style="margin:0">고른 차의 「파는 물건」에 6개를 넣어요. 사진 있는 것 3, 없는 것 3.</p>
     <button data-cmd="request">내 물건에 요청 오게 하기</button>
     <button data-cmd="request-other">…다른 물건을 고르는 상대</button>
     <button data-cmd="request-silent">…고르지 않는 상대</button>
@@ -77,6 +80,10 @@ textarea{width:100%;font:inherit;border-radius:12px;border:2px solid var(--btn);
     <button data-cmd="gone" data-num="1">고른 번호 차가 사라짐</button>
     <button data-cmd="seller-cancel" data-num="1">고른 번호가 수락을 취소</button>
     <button data-cmd="peer-cancel">상대가 거래를 취소</button>
+    <button data-cmd="urgent">가짜 급구 보내기</button>
+    <p class="d" style="margin:0">근처 가짜 차가 "유아용 카시트" 급구를 올려요.</p>
+    <button data-cmd="route">경로 추천 보내기</button>
+    <p class="d" style="margin:0">고른 차에 경로 추천 알림을 보내요.</p>
   </div>
 </section>
 
@@ -93,7 +100,8 @@ textarea{width:100%;font:inherit;border-radius:12px;border:2px solid var(--btn);
   <div class="col">
     <button data-cmd="pos">시험용 위치 넣기</button>
     <button data-cmd="mycar">내 차 정보 넣기</button>
-    <button data-cmd="reset" data-confirm="목록과 거래 횟수가 지워져요. 되돌릴까요?">처음 상태로 되돌리기</button>
+    <button data-cmd="history">거래 내역 채우기</button>
+    <button data-cmd="reset" data-confirm="목록과 거래 횟수가 지워져요. 내비의 목적지도 비워요. 되돌릴까요?">처음 상태로 되돌리기</button>
   </div>
   <p class="d">A는 37.4127 127.0947, 흰색 SUV 1204예요. B는 37.4250 127.1000, 검은색 세단 7788이에요.</p>
 </section>
@@ -137,7 +145,7 @@ $("#sayGo").onclick=async e=>{
   const r=await run("say",t);
   st(r.ok?"했어요. 10초쯤 기다려요":"안 됐어요: "+(r.out||"까닭을 몰라요"),!r.ok);
 };
-["로드마켓 앱으로 차량용 방향제 만 원에 올려 줘","로드마켓 앱으로 차량용 방향제 찾아 줘","로드마켓 앱으로 거래 알림 켜 줘","로드마켓 앱으로 주변 물건 알려 줘","로드마켓 앱으로 1번 보내 줘","수락","거절","로드마켓 앱으로 거래했어","로드마켓 앱으로 거래 취소해 줘"].forEach(t=>{
+["로드마켓 앱으로 차량용 방향제 만 원에 올려 줘","로드마켓 앱으로 차량용 방향제 찾아 줘","로드마켓 앱으로 거래 알림 켜 줘","로드마켓 앱으로 주변 물건 알려 줘","로드마켓 앱으로 1번 보내 줘","수락","거절","로드마켓 앱으로 거래했어","로드마켓 앱으로 거래 취소해 줘","로드마켓 앱으로 주니어 카시트 3만 원에 올려 줘, 등받이 분리돼","로드마켓 앱으로 집에 있는 캠핑 의자 4만 원에 올려 줘, 두 개 세트야","로드마켓 앱으로 카시트 찾아 줘","로드마켓 앱으로 주변에 뭐 있어?","로드마켓 앱으로 주변에 카시트 있어?","로드마켓 앱으로 1번 구매 요청 보내 줘","로드마켓 앱으로 급구 올려 줘, 유아용 카시트, 3살부터 7살용이면 좋아","로드마켓 앱으로 급구 내려 줘","로드마켓 앱으로 드라이브 코스 추천해 줘","이 길로 가자"].forEach(t=>{
   const b=document.createElement("button");b.className="q";b.textContent=t;
   b.onclick=()=>{$("#say").value=t};$("#quick").appendChild(b);
 });

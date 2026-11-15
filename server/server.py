@@ -107,6 +107,26 @@ FAKE_SELLERS = [
     ("주니어 카시트", 50000, 8, 1, "검은색 세단 · 번호 끝 7740", 8, True),
     ("차량용 거치대", 8000, 4, 5, "흰색 SUV · 번호 끝 9016", 4, True),
     ("골프 거리측정기", 60000, 7, 2, "은색 세단 · 번호 끝 4453", None, False),
+    # 6번부터: 목록이 실제처럼 차 보이게 더한 물건 (1~5번은 시연 대본에 묶여 있어 바꾸지 않아요)
+    ("차량용 무선 청소기", 35000, 3, 8, "남색 해치백 · 번호 끝 2287", 5, True),
+    ("캠핑 의자 2개", 25000, 9, 4, "카키색 SUV · 번호 끝 6630", 7, False),
+    ("2채널 블랙박스", 70000, 6, 15, "흰색 RV · 번호 끝 3815", 5, True),
+    ("접이식 유모차", 90000, 10, 2, "베이지색 SUV · 번호 끝 0472", 9, True),
+    ("보온 텀블러 세트", 12000, 2, 21, "빨간색 경차 · 번호 끝 8159", 3, True),
+    ("휴대용 타이어 공기주입기", 28000, 5, 6, "검은색 SUV · 번호 끝 1938", None, False),
+    ("차량용 햇빛가리개", 6000, 7, 0, "회색 세단 · 번호 끝 5504", 6, False),
+]
+# 가짜 파는 차 번호 -> server/seed_photos/ 의 그림 파일. 없는 번호는 사진 없이 보여요 (절반쯤만 달아 둬요)
+FAKE_PHOTOS = {2: "fake_02_junior_carseat.jpg", 4: "fake_04_phone_mount.jpg", 6: "fake_06_car_vacuum.jpg",
+               8: "fake_08_dashcam.jpg", 9: "fake_09_stroller.jpg", 11: "fake_11_tire_inflator.jpg"}
+# /demo/seed 가 부른 차의 「파는 물건」에 넣는 물건: (이름, 가격, 그림 파일 또는 "")
+DEMO_SEED_SELLS = [
+    ("트렁크 정리함", 15000, "seed_trunk_organizer.jpg"),
+    ("차량용 목쿠션 2개", 10000, "seed_neck_pillow.jpg"),
+    ("휴대용 아이스박스", 22000, "seed_cooler_box.jpg"),
+    ("차량용 방향제 세트", 7000, ""),
+    ("충전 케이블 3종", 5000, ""),
+    ("접이식 우산 2개", 8000, ""),
 ]
 # D-04~D-06 가짜 사는 차
 FAKE_BUYER_MIN = 3
@@ -310,7 +330,45 @@ def photo_put(b, ctype="image/jpeg"):
 def photo_get(pid):
     """(바이트, 형식) 또는 None"""
     with photo_lock:
-        return photos.get(pid) if isinstance(pid, str) else None
+        return (photos.get(pid) or seed_photos.get(pid)) if isinstance(pid, str) else None
+
+
+# 시연용 씨앗 사진: server/seed_photos/ 의 그림. PHOTO_KEEP 밀어내기와 따로 두어 지워지지 않아요.
+# id 는 파일 이름에서 정해서(32자리 16진수) 서버를 다시 켜도 같아요. 저장해 둔 물건의 사진도 그대로 이어져요.
+SEED_DIR = os.path.join(HERE, "seed_photos")
+SEED_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+seed_photos = {}         # 사진 id -> (바이트, 형식)
+
+
+def seed_id(name):
+    return hashlib.md5(("seed:" + name).encode("utf-8")).hexdigest()
+
+
+def seed_photo(name):
+    """그림 파일 이름 -> 사진 id. 파일이 없거나 이름이 비면 "" (사진 없이)."""
+    if not name:
+        return ""
+    pid = seed_id(name)
+    return pid if pid in seed_photos else ""
+
+
+def load_seed_photos():
+    try:
+        names = sorted(os.listdir(SEED_DIR))
+    except OSError:
+        return
+    for n in names:
+        ct = SEED_TYPES.get(os.path.splitext(n)[1].lower())
+        if n.startswith(("_", ".")) or ct is None:
+            continue
+        try:
+            with open(os.path.join(SEED_DIR, n), "rb") as f:
+                b = f.read(PHOTO_MAX + 1)
+        except OSError:
+            continue
+        if 0 < len(b) <= PHOTO_MAX:
+            seed_photos[seed_id(n)] = (b, ct)
+    log("씨앗 사진 %d장을 올렸어요" % len(seed_photos))
 
 
 def norm(s):
@@ -582,7 +640,7 @@ class Car:
         self.seq = 0
         self.events = []         # 아직 앱이 받았다고 하지 않은 일
         self.fake_near = False   # D-03
-        self.fake_gone = set()   # D-08 로 사라진 가짜 파는 차 번호(1~5)
+        self.fake_gone = set()   # D-08 로 사라진 가짜 파는 차 번호(1~len(FAKE_SELLERS))
         self.fail_cid = 0        # 처리하다 실패한 명령 번호와 횟수
         self.fail_n = 0
         self.dest = None         # 내비 목적지 (약속 2절)
@@ -685,7 +743,8 @@ def near_for(x, now, with_busy=False):
             if i in x.fake_gone:
                 continue
             key = "fake:s%d" % i
-            out[key] = dict(key=key, item=item, price=price, minutes=mins, deals=d, seller=key, item_id=i, photo="", busy=False,
+            out[key] = dict(key=key, item=item, price=price, minutes=mins, deals=d, seller=key, item_id=i,
+                            photo=seed_photo(FAKE_PHOTOS.get(i, "")), busy=False,
                             desc="", loc="car", gu="", owner=None)
     if x.pos is None:
         return out
@@ -2141,7 +2200,23 @@ def demo(cmd, q):
             return False, "거래 알림이 꺼져 있어요"
         x.fake_near = True
         x.fake_gone.clear()
-        return True, "가짜 파는 차 다섯 대가 주변에 나타났어요"
+        return True, "가짜 파는 차 %d대가 주변에 나타났어요" % len(FAKE_SELLERS)
+    if cmd == "seed":                                       # 시연용: 이 차의 「파는 물건」 채우기 (사진 있는 것·없는 것 섞어서)
+        o = owner(owner_key(x.id))
+        have = {norm(s["name"]) for s in o["sells"]}
+        added = 0
+        for name, price, pic in DEMO_SEED_SELLS:
+            if norm(name) in have:                          # 같은 이름이 이미 있으면 또 넣지 않아요
+                continue
+            good, res = edit_sell(o, dict(t="sell_add", name=name, price=price, loc="car", photo=seed_photo(pic)))
+            if not good:
+                break                                       # full: 물건 수 상한
+            have.add(norm(name))
+            added += 1
+            if o.get("legacy") == x.id:                     # 옛 차 앱은 폰에서 넣은 것처럼 일로도 보내요
+                phone_event(x, "phone_add_sell", name=res["name"], price=res["price"], photo=res["photo"])
+        x.sells = car_items(o)
+        return True, "파는 물건 %d개를 넣었어요" % added
     if cmd in ("request", "request-other", "request-silent"):   # D-04~D-06
         x.sells = car_items(owner(owner_key(x.id)))
         if not x.trade_on or not x.sells:
@@ -2865,6 +2940,7 @@ def main():
     global SALT
     port = int(os.environ.get("PORT", "8099"))
     SALT = load_salt()
+    load_seed_photos()
     with LOCK:
         load_owners()
         load_accounts()

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 임시 아이콘: 가운데에 R 글자 하나예요. -->
+<!-- 로고 마크예요 (logo/r2/final/logo_A_appicon.svg의 흰 path). -->
+<!-- 108dp 틀의 가운데 지름 66dp 원 안에 마크 상자의 대각선이 꼭 들어가게 줄였어요. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="7"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M42,74 L42,34 L55,34 A10,10 0 0 1 55,54 L42,54 M53,54 L66,74" />
+    <group
+        android:scaleX="0.0719" android:scaleY="0.0719"
+        android:translateX="20.635" android:translateY="18.316">
+        <path android:fillColor="#FFFFFF" android:pathData="M177.9,854.7 C421.4,519.6 562.3,488.4 562.3,281.3 L562.3,177.8 L750.2,137.9 L750.2,854.7 L562.3,854.7 L567.9,467.6 C567.9,613.1 514.1,671.2 416.6,854.7 Z" />
+    </group>
 </vector>

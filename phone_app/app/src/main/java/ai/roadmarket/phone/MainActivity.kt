@@ -29,6 +29,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -36,12 +37,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.window.OnBackInvokedDispatcher
 import org.json.JSONTokener
+import java.io.IOException
 
-/** 서버의 /phone 페이지를 그대로 띄우는 화면이에요. */
+/** 서버 주소의 /phone 페이지를 띄우는 화면이에요. 페이지 파일은 앱 안의 것을 써요. */
 class MainActivity : Activity() {
 
     private val home = BuildConfig.SERVER_URL + "/phone"
-    private val serverHost: String? = Uri.parse(BuildConfig.SERVER_URL).host
+    private val server: Uri = Uri.parse(BuildConfig.SERVER_URL)
+    private val serverHost: String? = server.host
 
     private lateinit var root: FrameLayout
     private lateinit var web: WebView
@@ -53,6 +56,9 @@ class MainActivity : Activity() {
 
     // 주 화면을 못 불러왔을 때 다시 열 주소
     private var failedUrl: String? = null
+
+    // 새 페이지를 여는 중인지예요. 기록 비우기를 진짜 새로 열 때만 하려고 둬요.
+    private var freshLoad = false
 
     // 로그인 표를 앱 저장소로 옮겨 두는 곳이에요. 뒤에서 알림 서비스가 이 표로 서버에 물어요.
     private lateinit var store: Store
@@ -76,6 +82,8 @@ class MainActivity : Activity() {
         root.addView(web, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         root.addView(offline, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         setContentView(root)
+        // 안드로이드 11 이하는 시작 화면을 창 바탕으로 그려요. 화면이 뜨면 페이지 바탕색으로 바꿔요.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) window.setBackgroundDrawableResource(R.color.page_bg)
 
         fitInsets()
         setupWeb()
@@ -112,20 +120,41 @@ class MainActivity : Activity() {
             allowFileAccess = false       // 기기 파일을 주소로 열 일은 없어요.
             allowContentAccess = false    // 사진은 고르는 창으로만 받아요.
             setSupportMultipleWindows(false)
+            // 페이지가 앱 안인지 알 수 있게 뒤에만 덧붙여요. 앞부분은 카카오가 WebView를 알아보는 데 써요.
+            userAgentString = "$userAgentString $UA_TAG"
         }
         CookieManager.getInstance().setAcceptCookie(true)
+        // 페이지가 window.RoadMarketApp.askNotify()로 알림 허용 창을 부를 수 있어요. 우리 서버의 /phone에서만 들어줘요.
+        web.addJavascriptInterface(Bridge(), "RoadMarketApp")
 
         web.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-                handleUrl(request.url)
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                // 서버가 /phone으로 돌려보내면(로그인 뒤 /phone#t=…) 새로 열어요. 그래야 앱 안의 페이지로 가로채져요.
+                if (BuildConfig.LOCAL_PAGE && request.isForMainFrame && request.isRedirect &&
+                    isLocalTarget(request.url) && hasLocalPage()
+                ) {
+                    view.loadUrl(request.url.toString())
+                    return true
+                }
+                return handleUrl(request.url)
+            }
+
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                if (!BuildConfig.LOCAL_PAGE || !request.isForMainFrame) return null
+                if (!request.method.equals("GET", ignoreCase = true) || !isLocalTarget(request.url)) return null
+                return localPage()
+            }
 
             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
                 if (failedUrl == null) offline.visibility = View.GONE
+                freshLoad = true   // 진짜로 새 페이지를 여는 때만 불려요. 페이지 안의 기록 쌓기(pushState)에는 안 불려요.
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
                 // /phone에 닿으면 기록을 비워요. 로그인 뒤 뒤로 가기로 카카오 화면에 돌아가지 않게요.
-                if (failedUrl == null && isHome(url)) view.clearHistory()
+                // 페이지가 덮는 화면을 열며 쌓은 기록(pushState)에도 이 함수가 불려요. 그때 비우면 화면이 안 닫혀요.
+                if (freshLoad && failedUrl == null && isHome(url)) view.clearHistory()
+                freshLoad = false
                 syncToken()
             }
 
@@ -145,6 +174,28 @@ class MainActivity : Activity() {
                 view: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams
             ): Boolean = openChooser(callback, params)
         }
+    }
+
+    /** 서버와 같은 주소(scheme·호스트·포트)의 /phone 인지 봐요. 그 밖의 /phone/state 같은 요청은 서버로 가요. */
+    private fun isLocalTarget(u: Uri): Boolean =
+        u.scheme.equals(server.scheme, ignoreCase = true) && u.host == serverHost && u.port == server.port &&
+            (u.path == "/phone" || u.path == "/phone/")
+
+    private fun hasLocalPage(): Boolean = try {
+        assets.open(LOCAL_ASSET).close(); true
+    } catch (e: IOException) {
+        false
+    }
+
+    /** 앱 안의 페이지를 내줘요. 파일이 없거나 못 읽으면 null을 돌려 서버 것을 쓰게 해요. */
+    private fun localPage(): WebResourceResponse? {
+        val stream = try { assets.open(LOCAL_ASSET) } catch (e: IOException) { return null }
+        val headers = mapOf(
+            "Cache-Control" to "no-store, no-cache, must-revalidate",
+            "Pragma" to "no-cache",
+            "Expires" to "0",
+        )
+        return WebResourceResponse("text/html", "utf-8", 200, "OK", headers, stream)
     }
 
     private fun isHome(url: String?): Boolean {
@@ -341,6 +392,14 @@ class MainActivity : Activity() {
 
     /** 뒤로 갈 곳이 있으면 뒤로, 없으면 앱을 닫아요. */
     private fun goBack() {
+        // 우리 페이지가 떠 있으면 먼저 페이지에 물어요. 덮는 화면이 열려 있으면 그것만 닫아요.
+        if (failedUrl == null && isHome(web.url)) {
+            web.evaluateJavascript("(function(){try{return !!(window.__rmBack&&window.__rmBack())}catch(e){return false}})()") { v ->
+                if (isDestroyed) return@evaluateJavascript
+                if (v != "true") finish()
+            }
+            return
+        }
         if (!web.canGoBack()) return finish()
         // 연결 안 됨 화면이 떠 있었으면 닫고 앞 페이지로 가요.
         failedUrl = null
@@ -402,17 +461,43 @@ class MainActivity : Activity() {
         }
         if (t == store.deadToken) return   // 서버가 이미 거절한 표예요. 페이지가 곧 로그아웃해요.
         if (t != store.token) store.token = t
-        askNotifyOnce()
         if (WatchService.appVisible) WatchService.start(this)
     }
 
-    /** 로그인된 뒤 한 번만 알림 허용을 물어요. 거절해도 다시 조르지 않아요. */
+    /** 페이지가 부르는 다리예요. 첫 물건을 올린 뒤처럼 알림이 쓸모 있을 때 페이지가 물어 달라고 해요. */
+    private inner class Bridge {
+        @android.webkit.JavascriptInterface
+        fun askNotify() {
+            runOnUiThread { if (!isDestroyed && failedUrl == null && isHome(web.url)) askNotifyOnce() }
+        }
+
+        /** 알림이 이미 허용돼 있는지예요. 페이지가 「알림 받기」 줄을 보일지 정할 때 써요. */
+        @android.webkit.JavascriptInterface
+        fun notifyOn(): Boolean =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * 사람이 「알림 받기」를 눌렀을 때 불려요. 처음이면 안드로이드 허용 창을 띄워요.
+     * 이미 한 번 물었는데 다시 물을 수 없는 상태면(거절함) 이 앱의 알림 설정 화면을 열어요.
+     */
     private fun askNotifyOnce() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || store.askedNotify) return
-        if (!WatchService.appVisible) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val perm = android.Manifest.permission.POST_NOTIFICATIONS
+        if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return
+        if (store.askedNotify && !shouldShowRequestPermissionRationale(perm)) {
+            try {
+                startActivity(
+                    Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)
+                )
+            } catch (e: Exception) {
+            }
+            return
+        }
         store.askedNotify = true
-        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
-        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQ_NOTIFY)
+        requestPermissions(arrayOf(perm), REQ_NOTIFY)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -439,5 +524,7 @@ class MainActivity : Activity() {
         const val SYNC_MS = 3_000L
         const val READ_TOKEN = "(function(){try{return localStorage.getItem('rm_phone')||''}catch(e){return ''}})()"
         const val KEY_CAMERA = "camera_uri"
+        const val LOCAL_ASSET = "phone.html"
+        const val UA_TAG = "RoadMarketApp/1.0"
     }
 }

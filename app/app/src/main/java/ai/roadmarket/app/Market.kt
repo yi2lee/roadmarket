@@ -7,7 +7,7 @@ import android.os.SystemClock
 import org.json.JSONArray
 import org.json.JSONObject
 
-enum class Screen { HOME, SELLS, WANTS, NEARBY, REQUEST, MEET, ASK }
+enum class Screen { HOME, SELLS, WANTS, SETTINGS, NEARBY, REQUEST, MEET, ASK, DEALS, DEAL_PAST }   // DEALS·DEAL_PAST: 거래 내역 탭 (Deals.kt)
 
 /**
  * 상태 기계. 버튼, 글레오, 서버가 보낸 일이 모두 여기의 같은 함수를 불러요.
@@ -55,6 +55,8 @@ object Market {
         var destTimer: Runnable? = null
         var doorOpen = false
         var doorCycles = 0
+        var peerNick = ""              // H-07: 지난 거래에 남길 상대 닉네임 (요청·줄·meet에서 알게 된 것)
+        var deferred = false            // H-04: 「아직이에요」로 미룸 → 거래 내역에 "확인 필요"
     }
 
     private val h = Handler(Looper.getMainLooper())
@@ -63,6 +65,8 @@ object Market {
     // 앱을 다시 시작해도 남는 것 (C-15)
     val sells = ArrayList<Sell>()      // 맨 앞이 맨 위
     val wants = ArrayList<String>()
+    /** 찾는 물건을 이 차에서 넣은 시각 (이름 → System.currentTimeMillis). 찾는 물건은 이름이 곧 구별 값이에요. 서버는 시각을 안 가져요. */
+    private val wantTimes = HashMap<String, Long>()
     var dealCount = 0
         private set
     private var nextId = 1L
@@ -85,11 +89,13 @@ object Market {
 
     fun init(c: Context) {
         app = c
+        Deals.init(c)
         val p = c.getSharedPreferences("store", Context.MODE_PRIVATE)
         JSONArray(p.getString("sells", "[]")).let { a ->
             for (i in 0 until a.length()) sells.add(sellFrom(a.getJSONObject(i)))
         }
         JSONArray(p.getString("wants", "[]")).let { a -> for (i in 0 until a.length()) wants.add(a.getString(i)) }
+        JSONObject(p.getString("want_times", "{}")).let { o -> o.keys().forEach { k -> wantTimes[k] = o.optLong(k) } }
         dealCount = p.getInt("deals", 0)
         nextId = p.getLong("nextId", 1L)
         p.getString("deal", null)?.let { raw ->
@@ -104,6 +110,7 @@ object Market {
             if (o.has("placeName")) d.place = Config.Place(o.getString("placeName"), o.getDouble("placeLat"), o.getDouble("placeLon"))
             d.inserted = o.optString("inserted", "").let { s -> Navi.Inserted.values().firstOrNull { it.name == s } }
             d.naviFailed = o.getBoolean("naviFailed")
+            d.peerNick = o.optString("peerNick", ""); d.deferred = o.optBoolean("deferred", false)
             deal = d
             tradeOn = true                                // C-15: 남아 있으면 켜진 채로 시작
             TradeService.start(app)
@@ -118,6 +125,7 @@ object Market {
         val w = JSONArray(); wants.forEach { w.put(it) }
         val e = app.getSharedPreferences("store", Context.MODE_PRIVATE).edit()
             .putString("sells", s.toString()).putString("wants", w.toString()).putInt("deals", dealCount).putLong("nextId", nextId)
+        e.putString("want_times", JSONObject().also { o -> wantTimes.filterKeys { it in wants }.forEach { (k, v) -> o.put(k, v) } }.toString())   // 지운 물건의 시각은 버려요
         val d = deal
         if (d == null) e.remove("deal") else {
             val o = JSONObject().put("id", d.id).put("selling", d.selling).put("item", d.itemName).put("price", d.price).put("peerDeals", d.peerDeals)
@@ -125,7 +133,7 @@ object Market {
             d.sellId?.let { o.put("sellId", it) }
             d.inserted?.let { o.put("inserted", it.name) }
             d.place?.let { o.put("placeName", it.name).put("placeLat", it.lat).put("placeLon", it.lon) }
-            o.put("placeDesc", d.placeDesc).put("home", d.home)
+            o.put("placeDesc", d.placeDesc).put("home", d.home).put("peerNick", d.peerNick).put("deferred", d.deferred)
             e.putString("deal", o.toString())
         }
         e.apply()
@@ -152,6 +160,8 @@ object Market {
     // ───── 진행 중 판정 (요건표 0-1) ─────
     val buyerWaiting: Boolean get() = nearby?.rows?.any { !it.gone && (it.state == RowState.WAITING || it.state == RowState.ACCEPTED) } == true
     val inProgress: Boolean get() = buyerWaiting || incoming != null || deal != null
+    /** H-09: 받은 요청에 답하기 전이거나 거래가 정해진 뒤. 「내 주변」 목록은 보이지만 새 요청은 보내지 않아요. */
+    val dealLive: Boolean get() = incoming != null || deal != null
 
     /** 그 물건으로 진행 중인 거래가 있는지 (S-11, S-12) */
     fun sellBusy(id: String) = incoming?.sell?.id == id || deal?.sellId == id
@@ -179,9 +189,17 @@ object Market {
     }
 
     // ───── 거래 알림 켜고 끄기 (C-04~C-09, C-16) ─────
+    /** 처음에는 켜져 있어요. 사람이 끈 적이 있으면("store"의 trade_on=false) 꺼진 채로 둬요. 화면이 앞에 열린 뒤에 불러요(C-20). 말·소리 안내는 없어요. */
+    fun autoOn() {
+        if (!tradeOn && app.getSharedPreferences("store", Context.MODE_PRIVATE).getBoolean("trade_on", true)) turnOn()
+    }
+
+    private fun rememberTradeOn(on: Boolean) = app.getSharedPreferences("store", Context.MODE_PRIVATE).edit().putBoolean("trade_on", on).apply()
+
     fun turnOn() {
         if (tradeOn) return
         tradeOn = true
+        rememberTradeOn(true)
         announced.clear()
         TradeService.start(app)
         Ui.refresh()
@@ -194,15 +212,22 @@ object Market {
         closeNearby()
         incoming?.let { Link.cmd(if (it.accepted) "cancel_accept" else "reject", "req" to it.req) }
         clearIncoming()
-        deal?.let { if (it.stage != Stage.ASK) { Link.cmd("cancel_deal", "deal" to it.id); endDeal(it) } }
+        deal?.let { if (it.stage != Stage.ASK) { Link.cmd("cancel_deal", "deal" to it.id); endDeal(it, Deals.CANCELLED) } }
         if (deal == null) Notes.endTask()
         Notes.clearEndNotices()
         justEnded = null
         tradeOn = false
+        rememberTradeOn(false)                            // 사람이 끈 것을 기억해요: 다시 열어도 꺼진 채예요
         TradeService.stop(app)
         Ui.refresh()
         Link.cmd("off")
     }
+
+    // ───── 글레오 켜고 끄기 (설정 탭, C-26) ─────
+    /** 꺼 두면 앱이 소리로 읽지 않고(Voice), 글레오가 부른 일도 하지 않아요(GleoReceiver). 기본 켜짐. 다른 값처럼 "store"에 남아요. */
+    var gleoOn: Boolean
+        get() = app.getSharedPreferences("store", Context.MODE_PRIVATE).getBoolean("gleo_on", true)
+        set(v) { app.getSharedPreferences("store", Context.MODE_PRIVATE).edit().putBoolean("gleo_on", v).apply(); Ui.refresh() }
 
     // ───── 파는 물건, 찾는 물건 ─────
     fun sellsFull() = sells.size >= Config.ITEMS_MAX
@@ -259,10 +284,13 @@ object Market {
     }
 
     fun hasWant(name: String) = wants.contains(name)
+    /** 찾는 물건을 넣은 시각. 이 기능 전에 넣었거나 폰·서버에서 온 물건은 몰라서 null이에요. */
+    fun wantAddedAt(name: String): Long? = wantTimes[name]
 
     /** B-04, B-08. 말로 넣었으면 맞는 물건 알림을 5초 늦춰 글레오의 답과 겹치지 않게 해요 (B-20). */
     fun addWant(name: String, byVoice: Boolean = false) {
         if (hasWant(name) || wantsFull()) return
+        wantTimes[name] = System.currentTimeMillis()
         wants.add(0, name); save(); Ui.refresh()
         if (serverMode) Link.cmd("want_add", "name" to name)
         if (byVoice) {
@@ -339,7 +367,7 @@ object Market {
     fun send(no: Int) {
         val list = nearby ?: return
         val r = row(no) ?: return
-        if (!canSend(r)) return
+        if (!canSend(r) || dealLive) return                                    // H-09: 거래 중에는 보내지 않아요
         r.sent = true
         r.state = RowState.WAITING
         dropRoute()
@@ -349,6 +377,7 @@ object Market {
 
     /** B-41: 아직 안 보낸 모든 줄에 보내기. 보낸 번호를 돌려줘요. */
     fun sendAll(): List<Int> {
+        if (dealLive) return emptyList()                                       // H-09
         val nos = nearby?.rows?.filter { canSend(it) }?.map { it.no } ?: emptyList()
         nos.forEach { send(it) }
         return nos
@@ -500,11 +529,31 @@ object Market {
         val pe = m.optJSONObject("peer")
         fun i(o: JSONObject?, k: String) = if (o == null || o.isNull(k) || !o.has(k)) null else o.optInt(k)
         fun d(o: JSONObject?, k: String) = if (o == null || o.isNull(k) || !o.has(k)) null else o.optDouble(k).takeIf { !it.isNaN() }
+        deal?.let { d -> if (d.peerNick.isEmpty()) d.peerNick = pe?.optString("nick", "") ?: "" }   // H-07
         meet = Meet(pl.optString("name"), pl.optDouble("lat"), pl.optDouble("lon"), i(m, "my_eta_min"), i(pe, "eta_min"), d(pe, "lat"), d(pe, "lon"), pe?.optBoolean("home", false) ?: false)
     }
 
     // ───── 직접 여는 주변 물건 목록 (browse) ─────
-    /** 홈 「주변 물건 보기」. 키워드 알림 목록이 이미 있으면 그것을 보여 줘요. */
+    /**
+     * C-01: 「내 주변」이 앞에 보이는 동안 주변 전체 목록(browse)을 열어 둬요. 번호·말(B-42, B-52)은 이 목록으로 해요.
+     * 찾는 물건 알림 목록이 이미 있으면 그대로 둬요. 탭을 떠나거나 앱이 뒤로 가면, 아무 줄에도 보내지 않은 주변 전체 목록만
+     * 조용히 닫아요 (목소리·"방금" 줄 없음). 닫혀 있어야 찾는 물건 알림(B-20)이 올 수 있어요.
+     */
+    fun showAround(on: Boolean) {
+        if (!serverMode) return
+        val nb = nearby
+        if (on) {
+            if (!tradeOn || nb != null || !Link.reachable) return   // H-08: 거래 중(incoming·deal)에도 열어요. 답 기다리는 중은 nb가 있어요
+            nearby = Nearby(nextListId++, emptyList(), browse = true)
+            Link.cmd("browse", "on" to true)
+            onBrowse()
+        } else if (nb != null && nb.browse && nb.rows.none { it.sent || it.state != RowState.NONE }) {
+            closeNearby()
+            checkNearby()
+        }
+    }
+
+    /** 주변 전체 목록 열기 (B-62). 찾는 물건 알림 목록이 이미 있으면 그것을 보여 줘요. */
     fun openBrowse() {
         if (!tradeOn || !serverMode) return
         if (nearby != null) { Ui.go(Screen.NEARBY); return }
@@ -741,7 +790,7 @@ object Market {
                 val d = deal ?: return
                 if (d.id != e.getString("deal") || d.stage == Stage.ASK) return
                 val hadInserted = d.inserted != null              // M-02 중이거나 M-07 뒤면 내비에 넣은 것이 없어요
-                endDeal(d)
+                endDeal(d, Deals.PEER_CANCELLED)
                 justEnded = Texts.SAY_PEER_CANCELLED_SHORT
                 Ui.go(Screen.HOME)
                 announce(if (hadInserted) Texts.SAY_PEER_CANCELLED else Texts.SAY_PEER_CANCELLED_SHORT, Screen.HOME, end = true)
@@ -773,7 +822,9 @@ object Market {
         val id = e.getString("deal")
         if (deal?.id == id) return
         val selling = e.getBoolean("selling")
+        var nick = ""                                     // H-07: 상대 닉네임 (모르면 "" → meet가 오면 채워요)
         if (selling) {
+            nick = incoming?.nick ?: ""
             if (incoming?.accepted == true) clearIncoming()
             else if (repliedUrgent.isEmpty() || inProgress) return            // 급구에 「판매하기」로 답한 물건이 골라짐 (약속 8절)
             repliedUrgent.clear(); urgentIn = null
@@ -783,10 +834,11 @@ object Market {
             val list = nearby ?: return
             if (e.optLong("list") != list.id) return
             if (list.browse) Link.cmd("browse", "on" to false)
+            nick = row(e.optInt("no", -1))?.car?.nick ?: ""
             nearby = null                                 // 서버가 나머지 요청을 끝냈어요 (B-49)
         }
         startDeal(Deal(id, selling, e.getString("item"), e.getLong("price"), e.optInt("peer_deals"), e.optString("peer_car", ""),
-            if (selling) e.opt("sell_id")?.toString() else null), home = e.optBoolean("home", false))
+            if (selling) e.opt("sell_id")?.toString() else null).also { it.peerNick = nick }, home = e.optBoolean("home", false))
     }
 
     // ───── 만날 곳 정하기 (M-01~M-07, M-20, M-21) ─────
@@ -862,7 +914,8 @@ object Market {
     }
 
     /** M-13: 내비에서 만날 곳을 지우고 거래를 끝내요. */
-    private fun endDeal(d: Deal) {
+    private fun endDeal(d: Deal, result: String) {
+        Deals.record(d, result)                           // H-07: 지난 거래에 한 줄
         d.destTimer?.let(h::removeCallbacks)
         d.inserted?.let { Navi.remove(it) }
         d.inserted = null
@@ -916,7 +969,7 @@ object Market {
             else wants.removeAll { d.itemName.replace(" ", "").contains(it.replace(" ", "")) }
         }
         Link.cmd("deal_end", "deal" to d.id, "done" to did, "stars" to d.stars)       // 서버가 sold/sale을 정해요 (약속 바뀐 것)
-        endDeal(d)
+        endDeal(d, if (did) Deals.DONE else Deals.NOT_DONE)
         justEnded = if (did) Texts.G_DONE else Texts.JUST_NOT_DONE
         Ui.go(Screen.HOME)
         checkNearby()
@@ -929,6 +982,7 @@ object Market {
         val d = deal ?: return
         if (d.stage != Stage.ASK) return
         d.stage = Stage.MEETING
+        d.deferred = true                                 // H-04
         d.doorOpen = false; d.doorCycles = 0
         save()
         Ui.go(Screen.MEET)
@@ -938,7 +992,7 @@ object Market {
     fun cancelDeal() {
         val d = deal ?: return
         Link.cmd("cancel_deal", "deal" to d.id)
-        endDeal(d)
+        endDeal(d, Deals.CANCELLED)
         justEnded = Texts.JUST_CANCELLED
         Ui.go(Screen.HOME)
         checkNearby()

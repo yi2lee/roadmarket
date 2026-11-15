@@ -1,0 +1,2011 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>로드마켓</title>
+<style>
+:root {
+  --bg: #FFFFFF; --text: #17191C; --sub: #5C6370; --weak: #8B929E; --line: #E9ECEF; --soft: #F4F6F8; --card: #FFFFFF;
+  --brand: #04695A; --brand-press: #035347; --brand-soft: #E6F2EF; --on-brand: #FFFFFF;
+  --danger: #D64545; --danger-soft: #FDEDED; --amber: #F2A100; --amber-soft: #FFF4DC; --amber-text: #7A4F00;
+  --info-soft: #EEF3FB; --info-text: #1F3A68; --scrim: rgba(17, 20, 19, .45); --kakao: #FEE500; --kakao-text: rgba(0,0,0,.85);
+  --float: 0 4px 14px rgba(0,0,0,.16);
+  --font: -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme=light]) {
+    --bg: #111413; --text: #F2F4F3; --sub: #AEB6B3; --weak: #848C89; --line: #2A302E; --soft: #1B1F1E; --card: #1B1F1E;
+    --brand: #3FB39B; --brand-press: #35997F; --brand-soft: #173A33; --on-brand: #08201B;
+    --danger: #F07A7A; --danger-soft: #3A1E1E; --amber: #F5B23A; --amber-soft: #33280F; --amber-text: #F5C76A;
+    --info-soft: #18243A; --info-text: #B9CCF0; --scrim: rgba(0,0,0,.6); --float: 0 4px 14px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme=dark] {
+  --bg: #111413; --text: #F2F4F3; --sub: #AEB6B3; --weak: #848C89; --line: #2A302E; --soft: #1B1F1E; --card: #1B1F1E;
+  --brand: #3FB39B; --brand-press: #35997F; --brand-soft: #173A33; --on-brand: #08201B;
+  --danger: #F07A7A; --danger-soft: #3A1E1E; --amber: #F5B23A; --amber-soft: #33280F; --amber-text: #F5C76A;
+  --info-soft: #18243A; --info-text: #B9CCF0; --scrim: rgba(0,0,0,.6); --float: 0 4px 14px rgba(0,0,0,.5);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 400 16px/24px var(--font); -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input, textarea { font: inherit; color: var(--text); }
+svg.i { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.s18 { width: 18px; height: 18px; } svg.i.s20 { width: 20px; height: 20px; } svg.i.s14 { width: 14px; height: 14px; stroke-width: 2.2; }
+.sub { color: var(--sub); font-size: 14px; line-height: 20px; }
+.weak { color: var(--weak); font-size: 13px; line-height: 18px; }
+.ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+
+/* 버튼 */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 52px; padding: 0 20px; border-radius: 12px;
+       font-size: 16px; font-weight: 700; width: 100%; transition: background-color .15s, opacity .15s; user-select: none; }
+.btn.primary { background: var(--brand); color: var(--on-brand); }
+.btn.primary:active { background: var(--brand-press); }
+.btn.soft { background: var(--soft); color: var(--text); }
+.btn.soft:active { background: var(--line); }
+.btn.tint { background: var(--brand-soft); color: var(--brand); }
+.btn.line { background: var(--bg); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+.btn.small { min-height: 48px; font-size: 15px; padding: 0 16px; border-radius: 10px; width: auto; }
+.btn.text { min-height: 48px; width: auto; padding: 0 12px; color: var(--brand); font-weight: 700; }
+.btn.danger-text { min-height: 48px; color: var(--danger); font-weight: 700; }
+.btn.danger { background: var(--danger); color: #fff; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary:disabled { background: var(--brand); }
+.btn.busy { opacity: .7; }
+.row2 { display: flex; gap: 8px; } .row2 > .btn:first-child { flex: 1; } .row2 > .btn:last-child { flex: 2; }
+.row2.even > .btn { flex: 1; }
+
+/* 입력 */
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field > label, .flabel { font-size: 14px; font-weight: 700; line-height: 20px; display: flex; justify-content: space-between; align-items: baseline; }
+.field > label .opt, .flabel .opt { color: var(--weak); font-weight: 400; }
+.field > label .cnt { color: var(--weak); font-weight: 400; font-size: 13px; }
+.inp { height: 52px; width: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); padding: 0 16px; font-size: 16px; outline: none; }
+textarea.inp { height: auto; min-height: 88px; padding: 14px 16px; line-height: 24px; resize: none; }
+.inp:focus { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+.inp::placeholder { color: var(--weak); }
+.inp:disabled { background: var(--soft); color: var(--weak); }
+.inp.bad { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
+.suffix { position: relative; } .suffix .inp { padding-right: 44px; }
+.suffix > span { position: absolute; right: 16px; top: 14px; color: var(--sub); }
+.err { color: var(--danger); font-size: 14px; line-height: 20px; display: flex; gap: 6px; align-items: flex-start; }
+.err:empty { display: none; }
+.err svg { margin-top: 1px; }
+.help { color: var(--sub); font-size: 14px; line-height: 20px; }
+.autofill { color: var(--brand); font-size: 14px; line-height: 20px; display: flex; gap: 6px; align-items: center; }
+.inline { display: flex; gap: 8px; } .inline .inp { flex: 1; min-width: 0; } .inline .btn { flex: none; min-height: 52px; }
+
+/* 안내 상자 */
+.note { display: flex; gap: 10px; padding: 14px 16px; border-radius: 12px; background: var(--soft); align-items: flex-start; }
+.note .nt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.note b { font-size: 15px; line-height: 22px; }
+.note span { font-size: 14px; line-height: 20px; color: var(--sub); }
+.note.info { background: var(--info-soft); color: var(--info-text); } .note.info span { color: var(--info-text); opacity: .85; }
+.note.warn { background: var(--amber-soft); color: var(--amber-text); } .note.warn span { color: var(--amber-text); opacity: .9; }
+.note.bad { background: var(--danger-soft); color: var(--danger); } .note.bad span { color: var(--danger); opacity: .9; }
+.note.ok { background: var(--brand-soft); color: var(--brand); } .note.ok span { color: var(--brand); opacity: .9; }
+.note .btn { flex: none; align-self: center; }
+.note svg.i { margin-top: 1px; }
+
+/* 칩 */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-weight: 700; line-height: 24px; background: var(--soft); color: var(--sub); white-space: nowrap; }
+.chip.g { background: var(--brand-soft); color: var(--brand); }
+.chip.d { background: var(--brand); color: var(--on-brand); }
+
+/* 앱 뼈대 */
+#main { min-height: 100vh; padding-bottom: 96px; }
+.top { position: sticky; top: 0; z-index: 10; background: var(--bg); height: 56px; padding: 0 20px; display: flex; align-items: center; gap: 8px; }
+.top h1 { font-size: 22px; line-height: 30px; font-weight: 700; flex: 1; }
+.logo { display: flex; align-items: center; gap: 6px; flex: 1; color: var(--brand); }
+.logo .mark { width: 22px; height: 26px; }
+.logo .word { height: 19px; width: 73px; }
+.carchip { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 13px; font-weight: 700; background: var(--soft); color: var(--sub); min-height: 32px; position: relative; }
+.carchip::after { content: ""; position: absolute; inset: -8px -4px; }
+.carchip.on { background: var(--brand-soft); color: var(--brand); }
+.view { padding: 4px 20px 0; display: flex; flex-direction: column; gap: 28px; }
+.sect { display: flex; flex-direction: column; gap: 12px; }
+.shead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.shead h2 { font-size: 17px; line-height: 24px; font-weight: 700; }
+.shead .weak { text-align: right; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; height: 64px; display: flex; background: var(--bg); border-top: 1px solid var(--line); }
+.tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--weak); font-size: 13px; line-height: 16px; }
+.tabbar button[aria-selected=true] { color: var(--brand); font-weight: 700; }
+.tabbar button[aria-selected=true] svg { stroke-width: 2.2; }
+.fab { position: fixed; right: 20px; bottom: 80px; z-index: 19; display: inline-flex; align-items: center; gap: 6px; height: 52px; padding: 0 20px 0 16px;
+       border-radius: 26px; background: var(--brand); color: var(--on-brand); font-size: 16px; font-weight: 700; box-shadow: var(--float); }
+.fab:active { background: var(--brand-press); }
+.fab.quiet { background: var(--bg); color: var(--brand); box-shadow: var(--float), inset 0 0 0 1.5px var(--brand); }
+.band { position: fixed; left: 12px; right: 12px; bottom: 72px; z-index: 19; display: flex; align-items: center; gap: 10px; min-height: 60px;
+        padding: 8px 8px 8px 16px; border-radius: 14px; background: var(--brand); color: var(--on-brand); box-shadow: var(--float); text-align: left; width: auto; }
+.band .bt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.band .bt b { font-size: 15px; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.band .bt span { font-size: 13px; line-height: 18px; opacity: .9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.band .more { font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,.22); }
+.band .go { flex: none; height: 44px; padding: 0 14px; border-radius: 10px; background: #fff; color: #04695A; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; }
+.band .dot { width: 8px; height: 8px; border-radius: 4px; background: var(--amber); flex: none; }
+
+/* 카드 */
+.card { border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: var(--card); }
+.card.fill { border: 0; background: var(--soft); }
+.card.urgent { border-color: var(--amber); }
+.card .eyebrow { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--brand); line-height: 18px; }
+.card .eyebrow.am { color: var(--amber-text); }
+.card h3 { font-size: 18px; line-height: 26px; font-weight: 700; }
+.timer { display: flex; flex-direction: column; gap: 6px; }
+.timer .tt { display: flex; justify-content: space-between; font-size: 13px; line-height: 18px; color: var(--amber-text); font-weight: 700; }
+.bar { height: 6px; border-radius: 3px; background: var(--amber-soft); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--amber); border-radius: 3px; transition: width 1s linear; }
+
+/* 물건 줄 */
+.items { display: flex; flex-direction: column; }
+.irow { display: flex; gap: 14px; align-items: center; padding: 12px 0; width: 100%; text-align: left; min-height: 88px; border-bottom: 1px solid var(--line); }
+.irow:last-child { border-bottom: 0; }
+.irow:active { background: var(--soft); }
+.thumb { width: 64px; height: 64px; border-radius: 12px; flex: none; background: var(--soft); color: var(--weak); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.irow .it { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.irow .nm { font-size: 16px; font-weight: 600; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.irow .pr { font-size: 16px; font-weight: 700; line-height: 22px; }
+.irow .chips { margin-top: 4px; }
+.irow.dim .thumb, .irow.dim .nm, .irow.dim .pr { opacity: .5; }
+.irow > svg.i { color: var(--weak); }
+.mini { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 12px; background: var(--soft); }
+.mini .thumb { width: 48px; height: 48px; border-radius: 10px; background: var(--bg); }
+.mini .it { flex: 1; min-width: 0; }
+.mini .nm { font-size: 15px; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini .pr { font-size: 15px; font-weight: 700; line-height: 22px; }
+
+/* 할 일 목록 */
+.tasks { display: flex; flex-direction: column; }
+.task { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-height: 64px; }
+.task .ck { width: 26px; height: 26px; border-radius: 13px; border: 2px solid var(--line); flex: none; display: flex; align-items: center; justify-content: center; color: var(--on-brand); }
+.task.done .ck { background: var(--brand); border-color: var(--brand); }
+.task .tx { flex: 1; min-width: 0; }
+.task .tx b { display: block; font-size: 16px; line-height: 22px; }
+.task.done .tx b { color: var(--weak); text-decoration: line-through; }
+.task .tx span { font-size: 13px; line-height: 18px; color: var(--sub); }
+
+/* 목록 줄(설정) */
+.list { display: flex; flex-direction: column; }
+.lrow { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 8px 0; width: 100%; text-align: left; border-bottom: 1px solid var(--line); }
+.lrow:last-child { border-bottom: 0; }
+.lrow .lt { flex: 1; min-width: 0; }
+.lrow .lt b { display: block; font-weight: 400; font-size: 16px; line-height: 22px; }
+.lrow .lt span { display: block; font-size: 13px; line-height: 18px; color: var(--sub); }
+.lrow .rv { color: var(--sub); font-size: 15px; }
+.lrow > svg.i { color: var(--sub); }
+.lrow > svg.i.chev { color: var(--weak); }
+.lrow.danger, .lrow.danger > svg.i { color: var(--danger); }
+.lrow:active { background: var(--soft); }
+.sw { width: 52px; height: 32px; border-radius: 16px; background: var(--line); position: relative; flex: none; transition: background-color .15s; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 13px; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.sw[aria-checked=true] { background: var(--brand); } .sw[aria-checked=true]::after { transform: translateX(20px); }
+
+.empty { text-align: center; padding: 32px 12px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.empty .ei { width: 56px; height: 56px; border-radius: 28px; background: var(--soft); color: var(--weak); display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+.empty b { font-size: 17px; line-height: 24px; }
+.empty .btn { margin-top: 12px; width: auto; }
+.profile { display: flex; align-items: center; gap: 14px; }
+.ava { width: 52px; height: 52px; border-radius: 26px; background: var(--brand-soft); color: var(--brand); font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: center; flex: none; }
+.ava.lg { width: 72px; height: 72px; border-radius: 36px; font-size: 28px; }
+.profile .pt { flex: 1; min-width: 0; } .profile .pt b { display: block; font-size: 18px; line-height: 26px; }
+.wrow { display: flex; align-items: center; gap: 8px; min-height: 56px; border-bottom: 1px solid var(--line); }
+.wrow .nm { flex: 1; min-width: 0; font-size: 16px; overflow-wrap: anywhere; }
+.iconbtn { width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; border-radius: 24px; color: var(--sub); flex: none; }
+.iconbtn:active { background: var(--soft); }
+.iconbtn:disabled { opacity: .4; }
+
+/* 덮는 화면 */
+.layer { position: fixed; inset: 0; z-index: 40; background: var(--bg); display: flex; flex-direction: column; opacity: 0; transform: translateX(16px); transition: opacity .18s, transform .18s; }
+.layer.in { opacity: 1; transform: none; }
+.layer.out { opacity: 0; transform: translateX(16px); }
+.lhead { height: 56px; display: flex; align-items: center; padding: 0 4px; flex: none; position: relative; }
+.lhead h2 { position: absolute; left: 64px; right: 64px; text-align: center; font-size: 17px; font-weight: 700; line-height: 24px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+.lhead .iconbtn { color: var(--text); }
+.lhead .rt { margin-left: auto; padding-right: 16px; color: var(--weak); font-size: 14px; }
+.lbody { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 20px 28px; display: flex; flex-direction: column; gap: 28px; }
+.lbody .stack { gap: 12px; }
+.lfoot { flex: none; padding: 12px 20px 16px; background: var(--bg); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.lfoot .why { text-align: center; font-size: 13px; line-height: 18px; color: var(--sub); }
+.ltitle { font-size: 22px; line-height: 30px; font-weight: 700; }
+
+/* 아래에서 올라오는 판 */
+.sheetwrap { position: fixed; inset: 0; z-index: 60; background: var(--scrim); display: flex; align-items: flex-end; opacity: 0; transition: opacity .18s; }
+.sheetwrap.in { opacity: 1; } .sheetwrap.out { opacity: 0; }
+.sheet { width: 100%; max-height: 92vh; overflow-y: auto; background: var(--bg); border-radius: 24px 24px 0 0; padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 16px; transform: translateY(24px); transition: transform .2s; }
+.sheetwrap.in .sheet { transform: none; }
+.handle { width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 4px auto 0; flex: none; }
+.sheet h2 { font-size: 20px; line-height: 28px; font-weight: 700; }
+.sheet .stxt { color: var(--sub); font-size: 15px; line-height: 22px; margin-top: -8px; }
+.sheet .acts { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+
+/* 거래 화면 */
+.layer.deal .lbody { padding: 0; gap: 0; }
+.mapzone { position: relative; z-index: 0; isolation: isolate; height: 42vh; min-height: 240px; background: var(--soft); flex: none; }
+.mapzone .slot { position: absolute; inset: 0; }
+.mapzone .map { width: 100%; height: 100%; }   /* Leaflet이 칸에 position: relative를 넣어요. 그래서 크기는 바깥 칸이 정해요 */
+.mapzone .mapnote { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 72px 20px 20px; }
+.mapzone .mapnote .note { width: 100%; }
+.floatback { position: absolute; left: 12px; top: 12px; z-index: 500; width: 48px; height: 48px; border-radius: 24px; background: var(--bg); color: var(--text); box-shadow: var(--float); display: flex; align-items: center; justify-content: center; }
+.panel { position: relative; margin-top: -16px; background: var(--bg); border-radius: 20px 20px 0 0; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 16px; z-index: 2; }
+.eta { font-size: 22px; line-height: 30px; font-weight: 700; }
+.eta em { font-style: normal; font-size: 40px; line-height: 48px; color: var(--brand); margin-right: 2px; }
+.place { display: flex; align-items: center; gap: 6px; font-size: 16px; color: var(--sub); }
+.place b { color: var(--text); font-weight: 700; }
+.plate { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; }
+.plate span { flex: 1; color: var(--sub); }
+.plate b { font-size: 26px; line-height: 32px; letter-spacing: 2px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.map .leaflet-control-attribution { font-size: 11px; }
+.tag { display: inline-block; transform: translate(-50%, -100%); white-space: nowrap; font: 700 13px/18px var(--font); padding: 4px 8px; border-radius: 8px; background: var(--brand); color: var(--on-brand); border: 2px solid var(--bg); }
+.tag.buyer { background: #17191C; color: #fff; }
+.tag.k { transform: none; margin-bottom: 4px; }
+
+/* 요청 판 */
+.reqhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.reqhead .eyebrow { color: var(--brand); font-size: 13px; font-weight: 700; }
+.buyer { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--soft); }
+.buyer .ava { width: 44px; height: 44px; font-size: 17px; }
+.buyer .bt { flex: 1; min-width: 0; } .buyer .bt b { display: block; font-size: 16px; line-height: 22px; }
+.buyer .dist { text-align: right; } .buyer .dist b { display: block; font-size: 22px; line-height: 28px; color: var(--brand); }
+
+/* 별점 */
+.stars { display: flex; justify-content: center; align-items: center; gap: 4px; }
+.stars button { width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; color: var(--line); }
+.stars button svg { width: 38px; height: 38px; stroke-width: 1.4; }
+.stars button.on { color: #F2A100; } .stars button.on svg { fill: currentColor; }
+.stars .zero { width: 40px; height: 40px; border-radius: 20px; border: 1.5px solid var(--line); color: var(--sub); font-weight: 700; margin-right: 6px; }
+.stars .zero.on { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
+
+/* 올리기 도우미 */
+.helpers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.helper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 92px; padding: 10px 4px; border: 1px solid var(--line); border-radius: 12px; text-align: center; overflow: hidden; position: relative; }
+.helper b { font-size: 14px; line-height: 20px; }
+.helper span { font-size: 12px; line-height: 16px; color: var(--weak); }
+.helper svg.i { color: var(--brand); }
+.helper.on { border-color: var(--brand); background: var(--brand-soft); }
+.helper img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.helper .ph { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; font-weight: 700; line-height: 26px; }
+.locs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.loc { display: flex; flex-direction: column; gap: 2px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; text-align: left; min-height: 72px; }
+.loc b { display: flex; align-items: center; gap: 6px; font-size: 16px; line-height: 22px; }
+.loc span { font-size: 13px; line-height: 18px; color: var(--sub); }
+.loc[aria-checked=true] { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); background: var(--brand-soft); }
+.loc[aria-checked=true] b { color: var(--brand); }
+.progress { height: 4px; border-radius: 2px; background: var(--brand-soft); overflow: hidden; position: relative; }
+.progress::after { content: ""; position: absolute; top: 0; bottom: 0; width: 40%; background: var(--brand); border-radius: 2px; animation: slide 1.2s ease-in-out infinite; }
+@keyframes slide { from { left: -40%; } to { left: 100%; } }
+.spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--brand-soft); border-top-color: var(--brand); animation: rot .8s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* 시작·처음 설정·불러오기 */
+.full { min-height: 100vh; display: flex; flex-direction: column; padding: 0 20px 20px; }
+.full .grow { flex: 1; }
+.hero { padding-top: 72px; display: flex; flex-direction: column; gap: 20px; }
+.hero .brand { display: flex; align-items: center; gap: 10px; color: var(--brand); }
+.hero .brand .mark { width: 34px; height: 40px; } .hero .brand .word { width: 120px; height: 31px; }
+.hero h1 { font-size: 26px; line-height: 36px; font-weight: 700; }
+.points { display: flex; flex-direction: column; gap: 18px; margin-top: 12px; }
+.point { display: flex; gap: 14px; align-items: flex-start; }
+.point .pi { width: 44px; height: 44px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); display: flex; align-items: center; justify-content: center; flex: none; }
+.point b { display: block; font-size: 16px; line-height: 22px; }
+.btn.kakao { background: var(--kakao); color: var(--kakao-text); }
+.testlink { margin: 12px auto 0; display: block; min-height: 48px; padding: 0 16px; color: var(--weak); font-size: 13px; text-decoration: underline; }
+.stepbar { display: flex; gap: 6px; } .stepbar i { flex: 1; height: 4px; border-radius: 2px; background: var(--line); } .stepbar i.on { background: var(--brand); }
+.choice { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; text-align: left; width: 100%; min-height: 76px; }
+.choice:active { background: var(--soft); }
+.choice .pi { width: 44px; height: 44px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); display: flex; align-items: center; justify-content: center; flex: none; }
+.choice .ct { flex: 1; } .choice .ct b { display: block; font-size: 16px; line-height: 22px; }
+.choice > svg.i { color: var(--weak); }
+.center { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px; text-align: center; }
+.center b { font-size: 18px; line-height: 26px; }
+
+body.netoff { padding-top: 36px; }
+.netbar { position: fixed; top: 0; left: 0; right: 0; z-index: 90; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 6px 16px; background: #17191C; color: #fff; font-size: 14px; line-height: 20px; }
+.toast { position: fixed; left: 16px; right: 16px; bottom: 144px; z-index: 95; display: flex; align-items: center; gap: 10px; padding: 12px 8px 12px 16px; min-height: 52px; border-radius: 12px; background: #17191C; color: #fff; font-size: 15px; line-height: 22px; box-shadow: var(--float); opacity: 0; transform: translateY(8px); transition: opacity .18s, transform .18s; pointer-events: none; }
+.toast.in { opacity: 1; transform: none; pointer-events: auto; }
+.toast span { flex: 1; } .toast .btn.text { color: #6FD3BC; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation-duration: 0s !important; } }
+html.mock * { transition: none !important; }
+/* 개발용: 헤드리스 크롬은 창 폭이 500 아래로 안 줄어서, 가짜 상태에서만 몸통을 412×915 폰 크기로 묶어요 */
+html.mock body { width: 412px; height: 915px; overflow-y: auto; overflow-x: hidden; transform: translateZ(0); }
+html.mock #main, html.mock .full, html.mock .center { min-height: 915px; }
+</style>
+</head>
+<body>
+
+<div id="start" class="full" hidden></div>
+<div id="onboard" class="full" hidden></div>
+<div id="loading" class="center" hidden><div class="spin" aria-hidden="true"></div><p class="sub">불러오는 중이에요</p></div>
+<div id="fatal" class="center" hidden></div>
+
+<div id="main" hidden>
+  <header class="top" id="top"></header>
+  <div id="v-home" class="view"></div>
+  <div id="v-wants" class="view" hidden>
+    <div class="sect">
+      <p class="sub" id="wantsIntro">차를 타고 달릴 때 근처에 맞는 물건이 나오면 차 화면으로 알려 줘요. 차에 없을 때는 오지 않아요.</p>
+      <div id="wantsCar"></div>
+      <div class="field">
+        <label for="wName">찾는 물건 이름</label>
+        <div class="inline">
+          <input id="wName" class="inp" type="text" maxlength="60" autocomplete="off" placeholder="예) 카시트, 캠핑 의자" enterkeyhint="done">
+          <button id="wantBtn" class="btn primary small">걸어 두기</button>
+        </div>
+        <p id="wantMsg" class="err" role="alert"></p>
+      </div>
+    </div>
+    <div id="wantsList"></div>
+  </div>
+  <div id="v-me" class="view" hidden></div>
+</div>
+<button id="band" class="band" hidden></button>
+<button id="fab" class="fab" hidden></button>
+<nav id="tabbar" class="tabbar" role="tablist" hidden></nav>
+<div id="layers"></div>
+<div id="netbar" class="netbar" role="status" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<input id="filePick" type="file" accept="image/*" hidden>
+
+<script>
+"use strict";
+// ───────── 글귀 ─────────
+const T = {
+  needName: "이름을 넣어 주세요",
+  needPrice: "가격을 넣어 주세요",
+  zeroPrice: "1원 이상으로 넣어 주세요. 나눔은 급구 답으로만 할 수 있어요",
+  bigPrice: "가격은 10억 원까지 넣을 수 있어요",
+  reading: "글자를 읽는 중이에요",
+  noRead: "글자를 읽지 못했어요. 캡처는 사진으로 넣어 두었으니 이름과 가격을 직접 넣어 주세요.",
+  needWant: "찾는 물건 이름을 넣어 주세요.",
+  dupWant: "이미 걸어 둔 물건이에요.",
+  fullWant: "찾는 물건은 50개까지 걸어 둘 수 있어요. 안 쓰는 것을 지워 주세요.",
+  linkLoading: "가져오는 중이에요",
+  linkFail: "가져오지 못했어요. 직접 넣어 주세요.",
+  linkHost: "당근이나 번개장터의 글 주소만 넣을 수 있어요.",
+  linkPart: "일부만 가져왔어요. 빈 칸을 직접 넣어 주세요.",
+  noHome: "주소를 찾지 못했어요. 동 이름이나 도로명으로 다시 넣어 주세요. 예) 망원동 412",
+  homeWhy: "집 위치를 한 번만 정해 주세요",
+  homeSub: "구 이름까지만 남에게 보여요",
+  full: "물건은 50개까지 올릴 수 있어요. 판매 완료된 물건을 내려 주세요.",
+  bigPhoto: "사진이 너무 커요. 다른 사진을 골라 주세요.",
+  badPhoto: "사진을 읽지 못했어요. 다른 사진을 골라 주세요.",
+  pending: "차가 아직 앞의 일을 받지 못했어요. 잠시 뒤 다시 해 주세요.",
+  net: "보내지 못했어요. 연결을 확인하고 다시 눌러 주세요.",
+  code403: "번호가 맞지 않아요. 차 화면의 번호가 바뀌었을 수 있어요. 지금 보이는 번호로 다시 넣어 주세요.",
+  plate400: "번호판 끝이 숫자 네 자리여야 해요. 예) 12가 3456",
+  wait429: "여러 번 틀렸어요. 1분 뒤에 다시 해 주세요.",
+  needCode: "차 화면에 뜬 번호를 넣어 주세요.",
+  loc: { car: "차에 있음", home: "집에 있음" },
+  status: { sale: "판매 중", deal: "거래 중", sold: "판매 완료" },
+};
+const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+const REQ_SEC = 180;            // 서버 HOME_ANSWER_SEC
+const $ = (id) => document.getElementById(id);
+
+// ───────── 아이콘 (선 1.8, 24px) ─────────
+const IC = {
+  home: '<path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9v11h4.5v-6h4v6h4.5V9"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.3-3.7 4.2-5.5 7.5-5.5s6.2 1.8 7.5 5.5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  chev: '<path d="m9.5 6 6 6-6 6"/>',
+  camera: '<path d="M4 8.5h3l1.8-2.5h6.4L17 8.5h3V19H4z"/><circle cx="12" cy="13.3" r="3.3"/>',
+  scan: '<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M8 10h8M8 14h5"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  car: '<path d="M5 11l1.5-4A2 2 0 0 1 8.4 5.6h7.2a2 2 0 0 1 1.9 1.4L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M6 17v2M18 17v2"/><circle cx="7.5" cy="14" r=".6"/><circle cx="16.5" cy="14" r=".6"/>',
+  pin: '<path d="M12 21s-6.5-5.8-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.2-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  star: '<path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M3.5 3.5l17 17"/><path d="M10.6 6.1A9.5 9.5 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-3 3.6M6.6 7.6A16 16 0 0 0 2.5 12S6 18 12 18a9 9 0 0 0 4-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
+  checkc: '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.8-5"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  alert: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.2M12 16.3v.2"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.2"/>',
+  bell: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+  belloff: '<path d="M6 16v-5a6 6 0 0 1 .6-2.6M9 5.8A6 6 0 0 1 18 11v4"/><path d="M4.5 18h14"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/><path d="M3.5 3.5l17 17"/>',
+  wifioff: '<path d="M3.5 3.5l17 17"/><path d="M8.5 16.3a5 5 0 0 1 7 0M5.2 13a9.8 9.8 0 0 1 4-2.4M18.8 13a9.8 9.8 0 0 0-2.4-1.8M2.2 9.4a15 15 0 0 1 4.3-2.8M21.8 9.4A15 15 0 0 0 11 5.6"/><path d="M12 19.7h.01"/>',
+  logout: '<path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4M6 12h10"/>',
+  unlink: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7"/><path d="M4 4l16 16"/>',
+  image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.7"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
+  box: '<path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z"/><path d="M3.5 7.5 12 11.5l8.5-4M12 11.5v9"/>',
+  bolt: '<path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/>',
+  tag: '<path d="M3.5 12.5V4.5h8l9 9-8 8z"/><circle cx="8" cy="9" r="1.4"/>',
+  refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/>',
+  undo: '<path d="M9 7 4.5 11.5 9 16"/><path d="M5 11.5h9a5 5 0 0 1 0 10h-2"/>',
+  kakao: '<path fill="currentColor" stroke="none" d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8 1 .1c5 0 9-3.1 9-7s-4-7.3-9-7.3z"/>',
+};
+const MARK = '<svg class="mark" viewBox="200 170 540 660" aria-hidden="true"><path fill="currentColor" d="M209.9 818.0 C427.8 518.0 555.9 491.4 555.9 306.0 L555.9 214.6 L727.9 178.0 L727.9 818.0 L555.9 818.0 L560.9 472.4 C560.9 602.0 514.8 654.5 427.9 818.0 Z"/></svg>';
+const WORD = '<svg class="word" viewBox="0 0 3820 1000" role="img" aria-label="로드마켓"><path fill="currentColor" d="M14.0 35.0 L14.0 156.6 L714.0 156.6 L714.0 266.6 L14.0 266.6 L14.0 619.8 L853.1 619.8 L878.9 498.2 L166.0 498.2 L166.0 388.2 L866.0 388.2 L866.0 35.0 Z M0.0 935.0 L866.4 935.0 L893.6 807.3 L506.9 807.3 L506.9 559.0 L373.1 559.0 L373.1 807.3 L0.0 807.3 Z M986.0 35.0 L986.0 685.0 L1823.1 685.0 L1852.9 544.6 L1153.2 544.6 L1153.2 175.4 L1813.1 175.4 L1842.9 35.0 Z M972.0 935.0 L1837.1 935.0 L1866.9 794.6 L972.0 794.6 Z M1936.0 923.0 L2416.0 923.0 L2416.0 47.0 L1936.0 47.0 Z M2088.0 174.7 L2264.0 174.7 L2264.0 795.3 L2088.0 795.3 Z M2510.0 935.0 L2662.0 935.0 L2662.0 528.8 L2786.4 528.8 L2813.6 401.2 L2662.0 401.2 L2662.0 18.8 L2510.0 51.2 Z M2892.0 35.0 L2892.0 162.7 L3100.0 162.7 L3100.0 231.2 L2938.0 231.2 L2938.0 358.8 L3100.0 358.8 L3100.0 445.0 L3252.0 445.0 L3252.0 35.0 Z M3410.0 485.0 L3562.0 485.0 L3562.0 18.8 L3410.0 51.2 L3410.0 221.2 L3314.0 221.2 L3314.0 348.8 L3410.0 348.8 Z M3668.4 505.0 L3820.4 505.0 L3820.4 18.8 L3668.4 51.2 Z M3011.6 941.0 L3198.1 941.0 L3306.7 796.9 L3478.5 941.0 L3700.8 941.0 L3392.8 682.6 L3506.8 531.4 L3284.7 578.6 Z"/></svg>';
+function svg(name, cls) { return '<svg class="i' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" aria-hidden="true">' + IC[name] + "</svg>"; }
+function ico(name, cls) { const t = document.createElement("template"); t.innerHTML = svg(name, cls); return t.content.firstChild; }
+
+// ───────── 작은 도구 ─────────
+function load(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+function save(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) {} }
+function won(n) { return Number(n) === 0 ? "나눔" : Number(n).toLocaleString("ko-KR") + "원"; }   // 0원은 어디서든 "나눔"
+function rate(r) { const n = typeof r === "number" ? r : (typeof r === "string" && r.trim() !== "" ? Number(r) : NaN); return Number.isFinite(n) ? "별점 " + n.toFixed(1) : "별점 아직 없음"; }
+function who(p) { if (!p) return ""; return p.nick + " · 거래 " + (p.deals || 0) + "번 · " + rate(p.rating); }
+function initial(n) { return (String(n || "?").trim()[0] || "?"); }
+function josa(w) { const c = String(w).trim().slice(-1); const k = c.charCodeAt(0); if (k >= 0xAC00 && k <= 0xD7A3) return (k - 0xAC00) % 28 ? "을" : "를"; if (/[0-9]/.test(c)) return "013678".includes(c) ? "을" : "를"; return /[lmnrLMNR]$/.test(c) ? "을" : "를"; }
+function photoSrc(id) { return "/photo/" + encodeURIComponent(id); }
+function h(tag, props, kids) {
+  const e = document.createElement(tag);
+  if (props) for (const k in props) {
+    const v = props[k];
+    if (v === undefined || v === null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (k === "html") e.innerHTML = v;
+    else if (k.slice(0, 2) === "on") e[k] = v;
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of [].concat(kids === undefined ? [] : kids)) if (c !== null && c !== undefined && c !== false) e.append(c);
+  return e;
+}
+function btn(label, cls, fn, opt) {
+  const b = h("button", { class: "btn " + (cls || ""), type: "button" });
+  if (opt && opt.icon) b.append(ico(opt.icon, "s20"));
+  b.append(label);
+  b.onclick = (ev) => { ev.stopPropagation(); fn && fn(b, ev); };
+  if (opt && opt.disabled) b.disabled = true;
+  return b;
+}
+function busy(b, text) {
+  const kids = [...b.childNodes]; const was = b.disabled;
+  b.disabled = true; b.classList.add("busy"); b.textContent = text;
+  return () => { b.classList.remove("busy"); b.replaceChildren(...kids); b.disabled = was; };
+}
+function note(kind, icon, title, text, action) {
+  return h("div", { class: "note " + kind, role: kind === "bad" ? "alert" : null, style: text ? null : "align-items:center" }, [ico(icon, "s20"),
+    h("div", { class: "nt" }, [h("b", { text: title }), text ? h("span", { text }) : null]), action || null]);
+}
+function errLine(text) { const p = h("p", { class: "err", role: "alert" }); setErr(p, text); return p; }
+function setErr(p, text) { p.replaceChildren(); if (text) p.append(ico("alert", "s18"), h("span", { text })); }
+function thumb(photo) { const t = h("div", { class: "thumb" }); if (photo) { const im = h("img", { alt: "" }); im.src = photoSrc(photo); im.onerror = () => { im.remove(); t.append(ico("box")); }; t.append(im); } else t.append(ico("box")); return t; }
+function bridge() { return window.RoadMarketApp || null; }
+function notifyOff() { try { const b = bridge(); return !!(b && b.notifyOn && !b.notifyOn()); } catch (e) { return false; } }
+
+// ───────── 상태 ─────────
+let MOCK = null;            // file:// 개발용 가짜 상태일 때만 채워짐
+let token = "";
+let st = null;              // 서버가 준 마지막 상태
+let got = false;            // 상태를 한 번이라도 받았나
+let fails = 0;              // 상태 읽기 연속 실패
+let timer = null;
+let tab = "home";
+let screenNow = "";
+let drawn = "";
+let sentReview = false;
+let loginErr = false;
+const replied = new Set();  // 답을 보낸 급구 (메모리뿐)
+const answered = new Set(); // 내가 답한 요청
+const autoSeen = new Set(); // 자동으로 띄운 요청
+let prevReqs = [];
+let closed = new Set(load("rm_closed").split(",").filter(Boolean));   // 닫은 급구
+const scrollOf = {};
+let seen = {};
+try { seen = JSON.parse(sessionStorage.getItem("rm_req_seen") || "{}") || {}; } catch (e) { seen = {}; }
+function saveSeen() { try { sessionStorage.setItem("rm_req_seen", JSON.stringify(seen)); } catch (e) {} }
+function seenAt(id) { if (!seen[id]) { seen[id] = Date.now(); saveSeen(); } return seen[id]; }
+function leftSec(id) { return Math.max(0, REQ_SEC - Math.floor((Date.now() - seenAt(id)) / 1000)); }
+function leftText(s) { return s <= 0 ? "곧 사라져요" : "약 " + Math.ceil(s / 60) + "분 남음"; }
+function mine() {
+  const me = st && st.me;
+  return { me: me || null, sells: (me ? me.sells : st && st.sells) || [], wants: (me ? me.wants : st && st.wants) || [] };
+}
+
+// ───────── 서버 ─────────
+async function api(method, path, body, raw) {
+  if (MOCK) return MOCK.api(method, path, body);
+  const hd = { "X-Phone-Token": token };
+  if (!raw && body !== undefined) hd["Content-Type"] = "application/json";
+  const r = await fetch(path, { method, headers: hd, body: raw ? body : (body === undefined ? undefined : JSON.stringify(body)) });
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  if (!j || typeof j !== "object") j = {};
+  if (r.status === 401 && path !== "/phone/login/test") leave();
+  return { status: r.status, j };
+}
+// 흔한 실패를 글귀로
+function failText(r, fallback) {
+  if (!r) return T.net;
+  if (r.status === 429 && r.j.why === "pending") return T.pending;
+  return fallback || "처리하지 못했어요. 다시 눌러 주세요.";
+}
+// 버튼 하나짜리 명령: 결과를 알려 주고 다시 읽어요
+async function cmd(path, body, b, waitText, okText, fallback) {
+  const undo = b ? busy(b, waitText || "보내는 중…") : null;
+  let r = null;
+  try { r = await api("POST", path, body); } catch (e) {}
+  if (undo) undo();
+  if (r && r.status === 401) return r;
+  if (!r || r.status !== 200) toast(failText(r, fallback));
+  else if (okText) toast(okText);
+  refresh();
+  return r;
+}
+
+// ───────── 알림 띠(토스트) ─────────
+let toastT = null;
+function toast(text, action, fn) {
+  const t = $("toast");
+  t.replaceChildren(h("span", { text }));
+  if (action) t.append(btn(action, "text", () => { t.classList.remove("in"); fn(); }));
+  t.style.bottom = (screenNow === "main" && !layers.length ? ($("band").hidden ? 80 : 144) : 96) + "px";
+  t.classList.add("in");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove("in"), action ? 5000 : 3200);
+}
+
+// ───────── 덮는 화면과 뒤로 가기 ─────────
+// 덮는 화면을 열면 기록을 하나 쌓고, 기기의 뒤로 가기(popstate)로 닫아요. 탭 전환은 쌓지 않아요.
+const layers = [];
+let depth = 0, skipPop = false, popWaiters = [];
+function pushLayer(L) {
+  depth += 1; L.depth = depth;
+  layers.push(L);
+  $("layers").append(L.el);
+  requestAnimationFrame(() => requestAnimationFrame(() => L.el.classList.add("in")));
+  syncMain();
+  return L;
+}
+function dropLayer(L) {
+  const i = layers.indexOf(L); if (i < 0) return;
+  layers.splice(i, 1);
+  if (L.onClose) try { L.onClose(); } catch (e) {}
+  L.el.classList.remove("in"); L.el.classList.add("out");
+  setTimeout(() => L.el.remove(), 200);
+  syncMain();
+}
+// 맨 위 화면을 닫아요. 브라우저 기록에 기대지 않아요(껍데기 앱에서 기록이 믿을 만하지 않았어요).
+function back() {
+  const top = layers[layers.length - 1];
+  if (top) { depth = Math.max(0, top.depth - 1); dropLayer(top); }
+  return Promise.resolve();
+}
+// 기기의 뒤로 버튼: 껍데기 앱이 불러요. 닫을 화면이 있었으면 true, 없으면 false(앱이 닫혀요).
+window.__rmBack = function () {
+  const top = layers[layers.length - 1];
+  if (!top) return false;
+  if (!top.force && top.beforeBack && top.beforeBack() === false) return true;
+  back();
+  return true;
+};
+// 위에 있는 화면이면 기록을 하나 되돌리고, 가운데 있는 화면이면 그냥 떼요
+function closeLayer(L) {
+  if (!L || layers.indexOf(L) < 0) return Promise.resolve();
+  if (layers[layers.length - 1] === L && L.depth === depth) { L.force = true; return back(); }
+  dropLayer(L); return Promise.resolve();
+}
+function replaceLayer(old, L) {
+  L.depth = old.depth;
+  const i = layers.indexOf(old);
+  if (i < 0) return pushLayer(L);
+  layers.splice(i, 1, L);
+  if (old.onClose) try { old.onClose(); } catch (e) {}
+  old.el.remove(); $("layers").append(L.el); L.el.classList.add("in");
+  syncMain();
+  return L;
+}
+function closeAll() {
+  const n = depth;
+  while (layers.length) dropLayer(layers[layers.length - 1]);
+  depth = 0;
+}
+// 브라우저(껍데기 앱 밖)에서 뒤로를 누르면 맨 위 화면을 닫아요
+window.addEventListener("popstate", () => { window.__rmBack(); });
+function syncMain() {
+  const open = layers.some((L) => !L.sheet);
+  $("main").inert = layers.length > 0;
+  document.body.style.overflow = open ? "hidden" : "";
+  drawChrome();
+}
+// 덮는 화면의 뼈대: 머리(뒤로·제목·단계), 몸, 아래 고정 칸
+function frame(o) {
+  const el = h("section", { class: "layer" + (o.cls ? " " + o.cls : ""), role: "dialog", "aria-modal": "true", "aria-label": o.title || "" });
+  if (!o.noHead) {
+    const hd = h("div", { class: "lhead" });
+    const bk = h("button", { class: "iconbtn", type: "button", "aria-label": o.close ? "닫기" : "뒤로", html: svg(o.close ? "close" : "back") });
+    bk.onclick = () => back();
+    hd.append(bk, h("h2", { text: o.title || "" }));
+    if (o.right) hd.append(h("span", { class: "rt", text: o.right }));
+    el.append(hd);
+  }
+  const body = h("div", { class: "lbody" });
+  el.append(body);
+  let foot = null;
+  if (o.foot) { foot = h("div", { class: "lfoot" }); el.append(foot); }
+  return { el, body, foot };
+}
+
+// ───────── 아래 판(확인 창) ─────────
+function sheet(o) {
+  return new Promise((resolve) => {
+    let done = false;
+    const wrap = h("div", { class: "sheetwrap" });
+    const sh = h("div", { class: "sheet", role: "alertdialog", "aria-modal": "true", "aria-label": o.title });
+    const L = { name: "sheet", sheet: true, el: wrap };
+    const finish = (v) => { if (done) return; done = true; L.force = true; back().then(() => resolve(v)); };
+    L.beforeBack = () => { if (!done) { done = true; resolve(false); } return true; };
+    wrap.onclick = (e) => { if (e.target === wrap) finish(false); };
+    sh.append(h("div", { class: "handle" }), h("h2", { text: o.title }));
+    if (o.text) sh.append(h("p", { class: "stxt", text: o.text }));
+    const acts = h("div", { class: "acts" });
+    acts.append(btn(o.ok, o.danger ? "danger" : "primary", () => finish(true)), btn(o.cancel || "돌아가기", "soft", () => finish(false)));
+    sh.append(acts);
+    wrap.append(sh);
+    pushLayer(L);
+  });
+}
+
+// ───────── 화면 전환 ─────────
+function showScreen(which) {
+  screenNow = which;
+  for (const id of ["start", "onboard", "loading", "fatal", "main"]) $(id).hidden = id !== which;
+  drawChrome();
+}
+function drawChrome() {
+  const main = screenNow === "main" && !!st;
+  $("tabbar").hidden = !main;
+  $("fab").hidden = !main || tab !== "home";
+  drawBand(main && tab !== "home");
+}
+
+// ───────── 시작 ─────────
+function drawStart() {
+  const s = $("start");
+  const test = h("button", { class: "testlink", type: "button", hidden: true, text: "시험용으로 들어가기" });
+  const testMsg = h("p", { class: "err", role: "alert", style: "justify-content:center" });
+  test.onclick = async () => {
+    setErr(testMsg, "");
+    const undo = busy(test, "들어가는 중…");
+    try {
+      const { status, j } = await api("POST", "/phone/login/test", { name: "시험 1" });
+      undo();
+      if (status === 200 && j.token) { token = j.token; save("rm_phone", token); begin(); return; }
+    } catch (e) { undo(); }
+    setErr(testMsg, "시험용으로 들어가지 못했어요. 다시 눌러 주세요.");
+  };
+  s.replaceChildren(...[
+    h("div", { class: "hero" }, [
+      h("div", { class: "brand", html: MARK + WORD }),
+      h("h1", {}, ["달리는 동안 내 차가 가게가 되는", h("br"), "길 위의 중고 거래"]),
+      h("div", { class: "points" }, [
+        point("car", "차에 물건을 싣고 올려 두면", "달리는 동안 근처 운전자에게 보여요"),
+        point("bell", "사겠다는 요청이 오면", "3분 안에 수락만 누르면 돼요"),
+        point("pin", "길 위에서 바로 만나요", "상대가 몇 분 뒤 오는지 지도로 보여요"),
+      ]),
+    ]),
+    h("div", { class: "grow" }),
+    loginErr ? note("bad", "alert", "카카오 로그인을 못 했어요", "다시 눌러 주세요.") : null,
+    h("div", { style: "height:12px" }),
+    btn("카카오로 시작하기", "kakao", () => { location.href = "/phone/login/kakao"; }, { icon: "kakao" }),
+    h("p", { class: "weak", style: "text-align:center;margin-top:10px", text: "처음이면 카카오 로그인이 곧 가입이에요" }),
+    test, testMsg,
+  ].filter(Boolean));
+  s._test = test;
+}
+function point(icon, title, text) { return h("div", { class: "point" }, [h("div", { class: "pi", html: svg(icon) }), h("div", {}, [h("b", { text: title }), h("span", { class: "sub", text })])]); }
+async function loginOptions() {
+  try { const r = MOCK ? { json: async () => ({ test: true }) } : await fetch("/phone/login"); const j = await r.json(); if ($("start")._test) $("start")._test.hidden = !j.test; } catch (e) {}
+}
+
+// ───────── 처음 설정 ─────────
+let obStep = 0;
+function needOnboard() { const me = st && st.me; return !!(me && me.restore_ok && !load("rm_onboard")); }
+function drawOnboard(step) {
+  obStep = step;
+  const o = $("onboard");
+  const me = (st && st.me) || {};
+  const head = h("div", { class: "lhead", style: "margin:0 -16px" });
+  if (step === 2) { const bk = h("button", { class: "iconbtn", type: "button", "aria-label": "뒤로", html: svg("back") }); bk.onclick = () => drawOnboard(1); head.append(bk); }
+  head.append(h("span", { class: "rt", text: step + " / 2" }));
+  const bar = h("div", { class: "stepbar" }, [h("i", { class: "on" }), h("i", { class: step === 2 ? "on" : "" })]);
+  if (step === 1) {
+    const inp = h("input", { class: "inp", id: "obNick", type: "text", maxlength: "12", autocomplete: "off", enterkeyhint: "done" });
+    inp.value = me.nick || "";
+    const err = errLine("");
+    const go = btn("이대로 시작하기", "primary", async (b) => {
+      const nick = inp.value.trim().replace(/\s+/g, " ").slice(0, 12);
+      setErr(err, ""); inp.classList.remove("bad");
+      if (!nick) { setErr(err, "닉네임을 넣어 주세요"); inp.classList.add("bad"); inp.focus(); return; }
+      if (nick !== (me.nick || "")) {
+        const undo = busy(b, "바꾸는 중…");
+        let r = null; try { r = await api("POST", "/phone/nick", { nick }); } catch (e) {}
+        undo();
+        if (r && r.status === 401) return;
+        if (!r || r.status !== 200) { setErr(err, r && r.status === 400 ? "닉네임은 1~12자로 넣어 주세요." : failText(r)); return; }
+        refresh();
+      }
+      drawOnboard(2);
+    });
+    inp.oninput = () => { go.lastChild.textContent = inp.value.trim() && inp.value.trim() !== (me.nick || "") ? "이 닉네임으로 시작하기" : "이대로 시작하기"; };
+    o.replaceChildren(head, bar, h("div", { style: "height:28px" }),
+      h("h1", { class: "ltitle", text: "거래할 때 쓸 닉네임을 확인해 주세요" }),
+      h("p", { class: "sub", style: "margin-top:8px", text: "상대에게는 닉네임, 거래 횟수, 별점만 보여요. 나중에 내 정보에서 바꿀 수 있어요." }),
+      h("div", { style: "height:28px" }),
+      h("div", { class: "field" }, [h("label", { for: "obNick" }, ["닉네임", h("span", { class: "cnt", text: "12자까지" })]), inp, err]),
+      h("div", { class: "grow" }), go);
+  } else {
+    const finish = (then) => { save("rm_onboard", String(Date.now())); save("rm_tasks", "1"); showScreen("main"); drawn = ""; render(); then && then(); };
+    o.replaceChildren(head, bar, h("div", { style: "height:28px" }),
+      h("h1", { class: "ltitle", text: "무엇부터 할까요?" }),
+      h("p", { class: "sub", style: "margin-top:8px", text: "하나만 골라도 돼요. 나머지는 홈의 할 일 목록에 남아 있어요." }),
+      h("div", { style: "height:24px" }),
+      h("div", { class: "stack" }, [
+        choice("tag", "물건 팔기", "사진 한 장이면 올릴 수 있어요", () => finish(() => openSell())),
+        choice("search", "찾는 물건 걸어 두기", "차로 달릴 때 근처에 나오면 차 화면으로 알려 줘요", () => finish(() => { setTab("wants"); setTimeout(() => $("wName").focus(), 50); })),
+        choice("car", "차와 잇기", "차 화면에 뜬 번호만 넣으면 돼요", () => finish(() => openPair())),
+      ]),
+      h("div", { class: "grow" }),
+      btn("둘러볼게요", "text", () => finish(), {}));
+    o.lastChild.style.alignSelf = "center";
+  }
+}
+function choice(icon, title, text, fn) {
+  const b = h("button", { class: "choice", type: "button" }, [h("div", { class: "pi", html: svg(icon) }), h("div", { class: "ct" }, [h("b", { text: title }), h("span", { class: "sub", text })]), ico("chev")]);
+  b.onclick = fn; return b;
+}
+
+// ───────── 상태 읽기 ─────────
+let seq = 0, applied = 0;
+async function refresh() {
+  if (!token) return;
+  if (MOCK) { onState(); return; }
+  const my = ++seq;
+  let res = null;
+  try { res = await api("GET", "/phone/state"); } catch (e) {}
+  if (!token || my < applied) return;
+  if (res && res.status === 401) return;
+  if (!res || res.status !== 200 || !res.j || typeof res.j !== "object") { onFail(); return; }
+  applied = my;
+  fails = 0; setNet(false);
+  st = res.j; got = true;
+  onState();
+}
+// 연결 끊김 띠: 머리를 가리지 않게 화면을 띠 높이만큼 내려요
+function setNet(off) {
+  const n = $("netbar");
+  if (off && n.hidden) n.replaceChildren(ico("wifioff", "s18"), h("span", { text: "연결이 끊겼어요. 다시 잇는 중이에요" }));
+  n.hidden = !off;
+  document.body.classList.toggle("netoff", !!off);
+}
+function onFail() {
+  fails += 1;
+  if (!got) { drawFatal(); showScreen("fatal"); return; }
+  if (fails >= 2) setNet(true);
+}
+function drawFatal() {
+  $("fatal").replaceChildren(h("div", { class: "empty" }, [h("div", { class: "ei", html: svg("wifioff") }),
+    h("b", { text: "서버에 연결하지 못했어요" }), h("p", { class: "sub", text: "인터넷 연결을 확인하고 다시 시도해 주세요." }),
+    btn("다시 시도", "primary", () => { showScreen("loading"); refresh(); })]));
+}
+function startPolling() {
+  clearInterval(timer);
+  refresh();
+  if (!MOCK) timer = setInterval(() => { if (!document.hidden) refresh(); }, 3000);
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && token && !MOCK) refresh(); });
+
+function onState() {
+  if (!st) return;
+  if (needOnboard()) {
+    if (screenNow !== "onboard") { drawOnboard(1); showScreen("onboard"); }
+  } else if (screenNow !== "main") { showScreen("main"); drawn = ""; }
+  if (st.me && st.me.restore_ok) save("rm_tasks", "1");     // 처음 온 계정: 홈에 할 일 목록을 둬요
+  const reqs = st.requests || [];
+  // 사라진 요청 알리기 (내가 답한 것은 빼요)
+  for (const id of prevReqs) if (!reqs.some((q) => q.id === id) && !answered.has(id)) toast("요청이 사라졌어요. 3분이 지났거나 상대가 요청을 거뒀어요. 물건은 판매 중 그대로예요.");
+  prevReqs = reqs.map((q) => q.id);
+  for (const id of Object.keys(seen)) if (!prevReqs.includes(id)) delete seen[id];
+  reqs.forEach((q) => seenAt(q.id));
+  saveSeen();
+  if (!st.deal) sentReview = false;
+  render();
+  for (const L of layers.slice()) if (L.update) L.update();
+  document.title = "로드마켓" + (reqs.length ? " (요청 " + reqs.length + ")" : "") + (asking() ? " (거래 어땠어요?)" : "");
+  if (screenNow === "main") {
+    for (const q of reqs) if (!autoSeen.has(q.id)) {
+      autoSeen.add(q.id);
+      if (!document.hidden && !layers.some((L) => L.name === "request")) { openRequest(q.id); break; }
+    }
+    maybeAskNotify(false);
+  }
+}
+function asking() { return !!(st && st.deal && st.deal.ask && !sentReview); }
+
+// ───────── 탭 화면 그리기 ─────────
+function setTab(t) {
+  if (t === tab) { window.scrollTo(0, 0); return; }
+  scrollOf[tab] = window.scrollY;
+  tab = t;
+  for (const v of ["home", "wants", "me"]) $("v-" + v).hidden = v !== t;
+  drawn = ""; render();
+  window.scrollTo(0, scrollOf[t] || 0);
+}
+function render() {
+  if (!st || screenNow !== "main") { drawChrome(); return; }
+  const key = JSON.stringify([st, tab, [...closed], [...replied], sentReview, load("rm_tasks_off"), notifyOff()]);
+  if (key === drawn) { drawChrome(); return; }      // 바뀐 게 없으면 다시 그리지 않아요(입력·스크롤 그대로)
+  drawn = key;
+  drawTop(); drawTabbar(); drawFab();
+  if (tab === "home") drawHome(); else if (tab === "wants") drawWants(); else drawMe();
+  drawChrome();
+}
+function drawTop() {
+  const t = $("top");
+  if (tab === "home") {
+    const me = st.me || {};
+    const chip = h("button", { class: "carchip" + (st.car ? " on" : ""), type: "button" }, [ico("car", "s14"),
+      st.car ? "차 연결됨" + (me.plate4 ? " · " + me.plate4 : "") : "차 안 이어짐"]);
+    chip.onclick = () => st.car ? setTab("me") : openPair();
+    t.replaceChildren(h("div", { class: "logo", html: MARK + WORD }), chip);
+  } else t.replaceChildren(h("h1", { text: tab === "wants" ? "찾는 물건" : "내 정보" }));
+}
+function drawTabbar() {
+  const nb = $("tabbar");
+  nb.replaceChildren(...[["home", "홈", "home"], ["wants", "찾는 물건", "search"], ["me", "내 정보", "user"]].map(([k, l, ic]) => {
+    const b = h("button", { type: "button", role: "tab", "aria-selected": tab === k ? "true" : "false" }, [ico(ic), h("span", { text: l })]);
+    b.onclick = () => setTab(k); return b;
+  }));
+}
+// 홈에 진한 결정 버튼(수락하기·답하기)이 있으면 떠 있는 버튼은 옅게 해서 진한 버튼이 하나만 보이게 해요
+function drawFab() { const f = $("fab"); f.replaceChildren(ico("plus", "s20"), "물건 올리기"); f.onclick = () => openSell(); f.classList.toggle("quiet", !!(st && ((st.requests || []).length || asking()))); }
+
+// 지금 할 일 목록 (요청 > 거래 뒤 물음 > 거래 중 > 급구)
+function todos() {
+  const out = [];
+  if (!st) return out;
+  for (const q of st.requests || []) out.push({ k: "req", id: q.id, title: "사겠다는 요청 · " + ((q.item || {}).name || ""), go: "답하기", fn: () => openRequest(q.id) });
+  const d = st.deal;
+  if (asking()) out.push({ k: "ask", title: "오늘 거래 어땠어요?", sub: d.item ? d.item.name : "", go: "답하기", fn: () => openReview() });
+  else if (d && !d.ask) {
+    const pn = placeName(d);
+    out.push({ k: "deal", title: typeof d.buyer_eta_min === "number" && pn ? "구매자가 " + d.buyer_eta_min + "분 뒤 도착해요" : (pn ? "거래 중 · " + pn : "만날 곳을 정하는 중이에요"),
+      sub: pn ? "만날 곳 · " + pn : (d.item ? d.item.name : ""), go: "지도", fn: () => openDeal() });
+  }
+  for (const u of st.urgents || []) if (!closed.has(u.id) && !replied.has(u.id)) out.push({ k: "urg", title: "급구 · " + u.name, sub: u.nick ? u.nick + "님이 찾고 있어요" : "", go: "보기", fn: () => openUrgent(u.id) });
+  return out;
+}
+function drawBand(show) {
+  const b = $("band");
+  const list = show && !layers.length ? todos() : [];
+  if (!list.length) { b.hidden = true; return; }
+  const t = list[0];
+  const tt = h("div", { class: "bt" }, [h("b", { text: t.title })]);
+  if (t.k === "req") tt.append(h("span", { "data-left": t.id, text: leftText(leftSec(t.id)) }));
+  else if (t.sub) tt.append(h("span", { text: t.sub }));
+  b.replaceChildren(...[t.k === "req" ? h("i", { class: "dot" }) : null, tt, list.length > 1 ? h("span", { class: "more", text: "+" + (list.length - 1) }) : null, h("span", { class: "go", text: t.go })].filter(Boolean));
+  b.onclick = t.fn;
+  b.hidden = false;
+}
+function placeName(d) { return d && d.place && typeof d.place.name === "string" ? d.place.name.trim() : ""; }
+
+function drawHome() {
+  const v = $("v-home");
+  const { me, sells, wants } = mine();
+  const parts = [];
+  // 폰 알림이 꺼져 있을 때만 (네이티브가 알려 줄 때)
+  if (notifyOff()) parts.push(note("warn", "belloff", "폰 알림이 꺼져 있어요", "앱을 닫아 두면 집 물건 요청을 놓쳐요.",
+    btn("켜기", "small soft", () => askNotifyNow())));
+  // 급한 카드
+  const urgent = [];
+  for (const q of st.requests || []) urgent.push(requestCard(q));
+  const d = st.deal;
+  if (asking()) urgent.push(askCard(d));
+  else if (d && !d.ask) urgent.push(dealCard(d));
+  for (const u of st.urgents || []) if (!closed.has(u.id)) urgent.push(urgentCard(u));
+  if (urgent.length) parts.push(h("div", { class: "sect" }, [h("div", { class: "shead" }, [h("h2", { text: "지금 할 일" })]), ...urgent]));
+  // 이렇게 시작해요
+  const tasks = [
+    { done: sells.length > 0, t: "첫 물건 올리기", s: "사진, 이름, 가격이면 끝나요", go: "올리기", fn: () => openSell() },
+    { done: !!st.car, t: "차와 잇기", s: "차에 실은 물건을 팔 때 필요해요", go: "잇기", fn: () => openPair() },
+    { done: wants.length > 0, t: "찾는 물건 걸어 두기", opt: true, s: "차로 달릴 때 근처에 나오면 차 화면으로 알려 줘요", go: "걸기", fn: () => { setTab("wants"); setTimeout(() => $("wName").focus(), 50); } },
+  ];
+  if (load("rm_tasks") && !load("rm_tasks_off") && tasks.some((x) => !x.done)) {
+    const box = h("div", { class: "card" }, [h("div", { class: "shead" }, [h("h3", { text: (me ? me.nick + "님, " : "") + "이렇게 시작해요" })]),
+      h("p", { class: "sub", style: "margin-top:-8px", text: "물건을 올리면 근처 운전자가 보고 요청해요" })]);
+    const tl = h("div", { class: "tasks" });
+    for (const x of tasks) tl.append(h("div", { class: "task" + (x.done ? " done" : "") }, [h("span", { class: "ck", html: x.done ? svg("check", "s14") : "" }),
+      h("div", { class: "tx" }, [h("b", {}, [x.t, x.opt ? h("span", { class: "weak", text: " (선택)" }) : null]), h("span", { text: x.s })]),
+      x.done ? null : btn(x.go, "small " + (x === tasks.find((y) => !y.done) ? "primary" : "soft"), x.fn)]));
+    box.append(tl, btn("목록 숨기기", "text", () => { save("rm_tasks_off", "1"); render(); }));
+    box.lastChild.style.alignSelf = "flex-end"; box.lastChild.style.marginBottom = "-12px";
+    parts.push(box);
+  }
+  // 내 물건: 차에 실은 것 / 집에 둔 것
+  if (!sells.length) {
+    parts.push(h("div", { class: "empty" }, [h("div", { class: "ei", html: svg("box") }), h("b", { text: "아직 올린 물건이 없어요" }),
+      h("p", { class: "sub", text: "올린 물건과 들어온 요청이 여기 모여요" })]));
+  } else {
+    const order = (a) => (a.status === "sold" ? 3 : a.hidden ? 2 : a.status === "deal" ? 0 : 1);
+    const group = (loc) => sells.filter((s) => (s.loc === "home" ? "home" : "car") === loc).map((s, i) => [s, i]).sort((a, b) => order(a[0]) - order(b[0]) || a[1] - b[1]).map((x) => x[0]);
+    const car = group("car"), home = group("home");
+    if (car.length) {
+      const sec = h("div", { class: "sect" }, [h("div", { class: "shead" }, [h("h2", { text: "차에 실은 물건 " + car.length }), h("span", { class: "weak", text: "요청은 차 화면으로 와요" })])]);
+      if (!st.car) sec.append(note("info", "car", "차와 이어야 차 화면에 떠요", "", btn("차와 잇기", "small soft", () => openPair())));
+      sec.append(h("div", { class: "items" }, car.map(itemRow)));
+      parts.push(sec);
+    }
+    if (home.length) {
+      const gu = me && me.home && me.home.gu;
+      parts.push(h("div", { class: "sect" }, [h("div", { class: "shead" }, [h("h2", { text: "집에 둔 물건 " + home.length }), h("span", { class: "weak", text: "요청은 이 폰으로 와요" })]),
+        h("div", { class: "items" }, home.map(itemRow))]));
+      void gu;
+    }
+    if (sells.length >= 45) parts.push(h("p", { class: "weak", style: "text-align:center", text: "물건은 50개까지 올릴 수 있어요 (지금 " + sells.length + "개)" }));
+  }
+  v.replaceChildren(...parts);
+  tickTimers();
+}
+function itemRow(s) {
+  const dim = s.hidden || s.status === "sold";
+  const r = h("button", { class: "irow" + (dim ? " dim" : ""), type: "button" });
+  const chips = h("div", { class: "chips" });
+  if (s.loc === "home") { const gu = st.me && st.me.home && st.me.home.gu; chips.append(h("span", { class: "chip" }, [ico("home", "s14"), gu ? "집 · " + gu : T.loc.home])); }
+  else chips.append(h("span", { class: "chip g" }, [ico("car", "s14"), T.loc.car]));
+  if (s.hidden) chips.append(h("span", { class: "chip" }, [ico("eyeoff", "s14"), "숨김"]));
+  else chips.append(h("span", { class: "chip" + (s.status === "deal" ? " d" : ""), text: T.status[s.status] || T.status.sale }));
+  r.append(thumb(s.photo), h("div", { class: "it" }, [h("span", { class: "nm", text: s.name }), h("span", { class: "pr", text: won(s.price) }), chips]), ico("chev", "s20"));
+  if (s.id) r.onclick = () => openItem(s.id); else r.disabled = true;
+  return r;
+}
+function requestCard(q) {
+  const it = q.item || {}, b = q.buyer || {};
+  const c = h("div", { class: "card urgent" });
+  c.append(h("div", { class: "timer" }, [h("div", { class: "tt" }, [h("span", { text: "사겠다는 요청이 왔어요" }), h("span", { "data-left": q.id, text: leftText(leftSec(q.id)) })]),
+    h("div", { class: "bar" }, [h("i", { "data-bar": q.id })])]));
+  c.append(h("div", { class: "mini" }, [thumb(photoFor(it)), h("div", { class: "it" }, [h("div", { class: "nm", text: it.name || "" }), h("div", { class: "pr", text: won(it.price) })])]));
+  c.append(h("p", { class: "sub", text: (b.nick || "") + " · " + rate(b.rating) + (q.min !== undefined && q.min !== null ? " · " + q.min + "분 거리" : "") + (b.plate4 ? " · 차 번호 끝 " + b.plate4 : "") }));
+  c.append(h("div", { class: "row2" }, [btn("거절하기", "soft", (x) => answer(q, false, x)), btn("수락하기", "primary", (x) => answer(q, true, x))]));
+  return c;
+}
+function askCard(d) {
+  return h("div", { class: "card fill" }, [h("div", { class: "eyebrow", html: svg("checkc", "s14") + "<span>거래가 끝났나요?</span>" }), h("h3", { text: "오늘 거래 어땠어요?" }),
+    h("p", { class: "sub", text: (d.item ? d.item.name + " · " + won(d.item.price) : "") + (d.buyer ? " · " + d.buyer.nick : "") }),
+    btn("답하기", "primary", () => openReview())]);
+}
+function dealCard(d) {
+  const pn = placeName(d);
+  const c = h("button", { class: "card fill", type: "button", style: "text-align:left;width:100%" });
+  c.append(h("div", { class: "eyebrow", html: svg("pin", "s14") + "<span>" + (pn ? "거래가 정해졌어요" : "수락했어요") + "</span>" }));
+  if (pn && typeof d.buyer_eta_min === "number") c.append(h("p", { class: "eta" }, [h("em", { text: d.buyer_eta_min + "분" }), " 뒤 구매자가 도착해요"]));
+  else c.append(h("h3", { text: pn ? "만날 곳: " + pn : "만날 곳을 정하는 중이에요" }));
+  if (pn && typeof d.buyer_eta_min === "number") c.append(h("p", { class: "place" }, [ico("pin", "s18"), h("b", { text: pn })]));
+  c.append(h("p", { class: "sub", text: d.item ? d.item.name + " · " + won(d.item.price) : "" }));
+  c.append(h("span", { class: "btn tint", text: "거래 화면 보기" }));
+  c.onclick = () => openDeal();
+  return c;
+}
+function urgentCard(u) {
+  const c = h("div", { class: "card" });
+  c.append(h("div", { class: "eyebrow am", html: svg("bolt", "s14") + "<span>급구 · 근처 운전자</span>" }), h("h3", { text: u.name }),
+    h("p", { class: "sub", text: (u.desc ? u.desc + " · " : "") + (u.nick || "") }));
+  const shut = () => { closed.add(u.id); save("rm_closed", [...closed].slice(-50).join(",")); render(); };
+  if (replied.has(u.id)) c.append(note("ok", "checkc", "답을 보냈어요", "상대가 고르면 차 화면에서 이어져요."), btn("닫기", "soft", shut));
+  else c.append(h("div", { class: "row2" }, [btn("닫기", "soft", shut), btn("이 물건 있어요", "tint", () => openUrgent(u.id))]));
+  return c;
+}
+function photoFor(it) { const s = mine().sells.find((x) => x.name === it.name && x.price === it.price); return s ? s.photo : ""; }
+
+function drawWants() {
+  const { me, wants } = mine();
+  $("wantsCar").replaceChildren(st.car ? "" : note("info", "car", "차와 이어야 알림을 받을 수 있어요", "맞는 물건 알림은 차 화면으로 와요.", btn("차와 잇기", "small soft", () => openPair())));
+  const box = $("wantsList");
+  const parts = [];
+  if (!wants.length) {
+    const b = btn("찾는 물건 걸어 두기", "soft", () => $("wName").focus());
+    parts.push(h("div", { class: "empty" }, [h("div", { class: "ei", html: svg("search") }), h("b", { text: "아직 걸어 둔 물건이 없어요" }), h("p", { class: "sub", text: "위 칸에 찾는 물건 이름을 넣어 보세요" }), b]));
+  } else {
+    const sec = h("div", { class: "sect" }, [h("div", { class: "shead" }, [h("h2", { text: "걸어 둔 물건 " + wants.length }), h("span", { class: "weak", text: "이름·설명에 들어 있으면 알려 줘요" })])]);
+    const list = h("div");
+    for (const w of wants) {
+      const x = h("button", { class: "iconbtn", type: "button", "aria-label": w + " 지우기", html: svg("close", "s20") });
+      x.onclick = async () => { x.disabled = true; let r = null; try { r = await api("POST", "/phone/want/remove", { name: w }); } catch (e) {} x.disabled = false;
+        if (r && r.status === 401) return; if (!r || r.status !== 200) toast(failText(r, "지우지 못했어요. 다시 눌러 주세요.")); else toast("‘" + w + "’" + josa(w) + " 지웠어요"); refresh(); };
+      list.append(h("div", { class: "wrow" }, [h("span", { class: "nm", text: w }), x]));
+    }
+    sec.append(list);
+    parts.push(sec);
+  }
+  if (me) {
+    const on = me.wants_alert !== false;
+    const sw = h("button", { class: "sw", type: "button", role: "switch", "aria-checked": on ? "true" : "false", "aria-label": "찾는 물건 알림" });
+    sw.onclick = async () => { sw.disabled = true; let r = null; try { r = await api("POST", "/phone/wants_alert", { on: !on }); } catch (e) {} sw.disabled = false;
+      if (r && r.status === 401) return; if (!r || r.status !== 200) toast(failText(r, "바꾸지 못했어요. 다시 눌러 주세요.")); refresh(); };
+    parts.push(h("div", { class: "sect" }, [h("div", { class: "lrow", style: "border:0" }, [h("div", { class: "lt" }, [h("b", { text: "찾는 물건 알림" }),
+      h("span", { text: on ? "끄면 목록은 남고 차 화면 알림만 멈춰요" : "찾는 물건 알림이 꺼져 있어요. 맞는 물건이 나와도 알리지 않아요." })]), sw])]));
+  }
+  box.replaceChildren(...parts);
+}
+$("wantBtn").onclick = async () => {
+  const name = $("wName").value.trim();
+  setErr($("wantMsg"), ""); $("wName").classList.remove("bad");
+  if (!name) { setErr($("wantMsg"), T.needWant); $("wName").classList.add("bad"); $("wName").focus(); return; }
+  const first = mine().sells.length + mine().wants.length === 0;
+  const undo = busy($("wantBtn"), "거는 중…");
+  let r = null;
+  try { r = await api("POST", "/phone/want", { name }); } catch (e) {}
+  undo();
+  if (r && r.status === 401) return;
+  if (r && r.status === 409 && r.j.why === "dup") { setErr($("wantMsg"), T.dupWant); return; }
+  if (r && r.status === 409 && r.j.why === "full") { setErr($("wantMsg"), T.fullWant); return; }
+  if (r && r.status === 400 && r.j.why === "empty") { setErr($("wantMsg"), T.needWant); return; }
+  if (!r || r.status !== 200) { setErr($("wantMsg"), failText(r, "걸어 두지 못했어요. 다시 눌러 주세요.")); return; }
+  $("wName").value = "";
+  refresh();
+  if (first) maybeAskNotify(true);
+};
+$("wName").addEventListener("keydown", (e) => { if (e.key === "Enter") $("wantBtn").click(); });
+
+function drawMe() {
+  const v = $("v-me");
+  const { me } = mine();
+  const parts = [];
+  if (me) {
+    const p = h("div", { class: "profile" }, [h("div", { class: "ava", text: initial(me.nick) }), h("div", { class: "pt" }, [h("b", { class: "ell", text: me.nick }),
+      h("span", { class: "sub", text: "거래 " + (me.deals || 0) + "번 · " + rate(me.rating) })]), btn("닉네임 바꾸기", "small soft", () => openNick())]);
+    parts.push(p);
+  }
+  // 차
+  const car = h("div", { class: "sect" }, [h("div", { class: "shead" }, [h("h2", { text: "내 차" })])]);
+  if (st.car) {
+    car.append(note("ok", "car", "차와 이어져 있어요" + (me && me.plate4 ? " · 번호 끝 " + me.plate4 : ""), "차에 실은 물건이 차 화면에 떠요. 그 물건의 요청도 차 화면으로 와요."));
+    const l = h("div", { class: "list" });
+    if (me && typeof me.plate4 === "string") l.append(lrow("pen", "번호판 바꾸기", "만날 때 상대가 내 차를 알아보도록 뒤 네 자리만 보여 줘요", null, () => openPlate()));
+    l.append(lrow("unlink", "차 연결 끊기", "", null, () => unpair(), true));
+    car.append(l);
+  } else {
+    car.append(note("info", "car", "차와 이어져 있지 않아요", "차에서 로드마켓을 열면 홈에 폰 연결 번호가 떠요. 그 번호를 넣으면 돼요.", btn("차와 잇기", "small primary", () => openPair())));
+  }
+  parts.push(car);
+  const l2 = h("div", { class: "list" });
+  l2.append(lrow("home", "집 위치", "집 물건을 올릴 때 써요. 구 이름까지만 남에게 보여요", me && me.home ? (me.home.gu || "정했어요") : "정하지 않았어요", () => openHomeAddr()));
+  if (notifyOff()) l2.append(lrow("bell", "폰 알림 받기", "집 물건 요청이 오면 알려 드려요", "꺼짐", () => askNotifyNow()));
+  l2.append(lrow("logout", "로그아웃", "", null, () => logout()));
+  parts.push(h("div", { class: "sect" }, [h("div", { class: "shead" }, [h("h2", { text: "설정" })]), l2]));
+  v.replaceChildren(...parts);
+}
+function lrow(icon, title, sub, right, fn, danger) {
+  const r = h("button", { class: "lrow" + (danger ? " danger" : ""), type: "button" }, [ico(icon), h("div", { class: "lt" }, [h("b", { text: title }), sub ? h("span", { text: sub }) : null]),
+    right ? h("span", { class: "rv", text: right }) : null, danger ? null : ico("chev", "s20 chev")]);
+  r.onclick = fn; return r;
+}
+async function unpair() {
+  if (!(await sheet({ title: "차 연결을 끊을까요?", text: "이 폰과 차의 연결이 풀려요. 다시 이으려면 차 화면에 뜬 새 번호를 넣어야 해요.", ok: "연결 끊기", danger: true }))) return;
+  cmd("/phone/unpair", undefined, null, null, "차 연결을 끊었어요", "끊지 못했어요. 다시 눌러 주세요.");
+}
+async function logout() {
+  if (!(await sheet({ title: "로그아웃할까요?", text: "이 폰에서 요청 알림을 받지 못해요. 다시 들어오려면 카카오로 시작하기를 눌러요.", ok: "로그아웃", danger: true }))) return;
+  try { await api("POST", "/phone/logout"); } catch (e) {}
+  leave();
+}
+
+// 남은 시간 막대와 글자를 1초마다 고쳐요 (다시 그리지 않고 글자만)
+function tickTimers() {
+  document.querySelectorAll("[data-left]").forEach((e) => { e.textContent = leftText(leftSec(e.dataset.left)); });
+  document.querySelectorAll("[data-bar]").forEach((e) => { e.style.width = (leftSec(e.dataset.bar) / REQ_SEC * 100).toFixed(1) + "%"; });
+}
+setInterval(tickTimers, 1000);
+
+// ───────── 요청 (아래에서 올라오는 판) ─────────
+async function answer(q, accept, b) {
+  const undo = busy(b, accept ? "수락하는 중…" : "거절하는 중…");
+  let r = null;
+  try { r = await api("POST", "/phone/request/answer", { id: q.id, accept }); } catch (e) {}
+  undo();
+  if (r && r.status === 401) return false;
+  if (r && r.status === 404) { answered.add(q.id); toast("이미 끝난 요청이에요."); refresh(); return true; }
+  if (!r || r.status !== 200) { toast(failText(r, T.net)); return false; }
+  answered.add(q.id);
+  toast(accept ? "수락했어요. 만날 곳을 정하는 중이에요." : "거절했어요.");
+  refresh();
+  if (accept) { const L = layers.find((x) => x.name === "request"); if (L) replaceLayer(L, dealLayer()); else openDeal(); }
+  return true;
+}
+function openRequest(id) {
+  const reqs = (st && st.requests) || [];
+  const q = reqs.find((x) => x.id === id); if (!q) return;
+  const ex = layers.find((L) => L.name === "request"); if (ex) return;
+  const it = q.item || {}, b = q.buyer || {};
+  const wrap = h("div", { class: "sheetwrap" });
+  const sh = h("div", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-label": "요청" });
+  const L = { name: "request", sheet: true, el: wrap, id };
+  wrap.onclick = (e) => { if (e.target === wrap) back(); };
+  const n = reqs.indexOf(q) + 1;
+  const err = errLine("");
+  sh.append(h("div", { class: "handle" }),
+    h("div", { class: "reqhead" }, [h("span", { class: "eyebrow", text: reqs.length > 1 ? "요청 " + n + " / " + reqs.length : "요청" }), h("span", { class: "weak", html: "" })]),
+    h("h2", { text: "사겠다는 요청이 왔어요" }),
+    h("div", { class: "timer" }, [h("div", { class: "tt" }, [h("span", { text: "3분 안에 답하지 않으면 사라져요" }), h("span", { "data-left": id, text: leftText(leftSec(id)) })]), h("div", { class: "bar" }, [h("i", { "data-bar": id })])]),
+    h("div", { class: "mini" }, [thumb(photoFor(it)), h("div", { class: "it" }, [h("div", { class: "nm", text: it.name || "" }), h("div", { class: "pr", text: won(it.price) })])]),
+    h("div", { class: "buyer" }, [h("div", { class: "ava", text: initial(b.nick) }), h("div", { class: "bt" }, [h("b", { text: b.nick || "" }),
+      h("span", { class: "sub", text: rate(b.rating) + " · 거래 " + (b.deals || 0) + "번" + (b.plate4 ? " · 차 번호 끝 " + b.plate4 : "") })]),
+      q.min !== undefined && q.min !== null ? h("div", { class: "dist" }, [h("b", { text: q.min + "분" }), h("span", { class: "weak", text: "거리" })]) : null]),
+    h("p", { class: "sub", text: "값은 올린 그대로예요. 수락하면 만날 곳이 정해지고 지도가 열려요." }),
+    err,
+    h("div", { class: "row2" }, [btn("거절하기", "soft", async (x) => { if (await answer(q, false, x)) closeLayer(L); }), btn("수락하기", "primary", (x) => answer(q, true, x))]));
+  wrap.append(sh);
+  L.update = () => {
+    if (!((st && st.requests) || []).some((x) => x.id === id)) { closeLayer(L).then(() => nextRequest()); }
+  };
+  L.onClose = () => setTimeout(tickTimers, 0);
+  pushLayer(L);
+  tickTimers();
+}
+function nextRequest() { const q = ((st && st.requests) || []).find((x) => !answered.has(x.id)); if (q && !layers.some((L) => L.name === "request")) openRequest(q.id); }
+
+// ───────── 거래 중 (지도 위, 아래 판) ─────────
+let star = null;
+const LEAF = "https://unpkg.com/leaflet@1.9.4/dist/leaflet";
+let leafletState = "";    // "" 안 불러옴, "loading", "ok", "fail"
+let map = null, mapBox = null, pinPlace = null, pinBuyer = null, lastFit = "";
+function loadLeaflet() {
+  if (leafletState) return;
+  leafletState = "loading";
+  const css = document.createElement("link"); css.rel = "stylesheet"; css.href = LEAF + ".css"; document.head.append(css);
+  const s = document.createElement("script"); s.src = LEAF + ".js";
+  s.onload = () => { leafletState = window.L ? "ok" : "fail"; draw(); };
+  s.onerror = () => { leafletState = "fail"; draw(); };
+  document.head.append(s);
+}
+function okPos(p) { return !!p && typeof p.lat === "number" && typeof p.lon === "number"; }
+// 두 점이 거의 같아요(약 50m 안): 경계 맞추기 대신 정한 확대 단계로 가운데에
+function near(p, q) { return Math.abs(p.lat - q.lat) < 0.0005 && Math.abs(p.lon - q.lon) < 0.0005; }
+function tag(text, cls) { return window.L.divIcon({ className: "", html: '<span class="tag' + (cls ? " " + cls : "") + '">' + text + "</span>", iconSize: null, iconAnchor: [0, 0] }); }
+function dropMap() {
+  if (map) { try { map.remove(); } catch (e) {} }
+  map = null; mapBox = null; pinPlace = null; pinBuyer = null; lastFit = "";
+  kmap = null; kPlace = null; kBuyer = null;
+}
+// 카카오 지도 먼저, 안 되면(키 없음·3초 안에 안 뜸) Leaflet/OpenStreetMap, 그것도 안 되면 글만
+let kakaoKey = null;      // null = 아직 /phone/login을 안 물어봄, "" = 키 없음
+let kakaoState = "";      // "" 안 불러옴, "asking", "loading", "ok", "fail"
+let kmap = null, kPlace = null, kBuyer = null;
+function loadKakao() {
+  if (kakaoState) return;
+  if (kakaoKey === null) {
+    kakaoState = "asking";
+    fetch("/phone/login").then((r) => r.json()).then((j) => { kakaoKey = (j && typeof j.kakao_js === "string") ? j.kakao_js : ""; })
+      .catch(() => { kakaoKey = ""; }).finally(() => { kakaoState = ""; loadKakao(); draw(); });
+    return;
+  }
+  if (!kakaoKey) { kakaoState = "fail"; return; }
+  kakaoState = "loading";
+  let done = false;
+  const fail = () => { if (done) return; done = true; kakaoState = "fail"; draw(); };
+  const tm = setTimeout(fail, 3000);
+  const s = document.createElement("script");
+  s.src = "https://dapi.kakao.com/v2/maps/sdk.js?appkey=" + encodeURIComponent(kakaoKey) + "&autoload=false";
+  s.onerror = () => { clearTimeout(tm); fail(); };
+  s.onload = () => {
+    try {
+      window.kakao.maps.load(() => { if (done) return; done = true; clearTimeout(tm); kakaoState = "ok"; draw(); });
+    } catch (e) { clearTimeout(tm); fail(); }
+  };
+  document.head.append(s);
+}
+function kakaoFor(d) {
+  const pl = d.place;
+  if (!mapBox) { mapBox = h("div", { class: "map" }); mapBox.setAttribute("aria-label", "만날 곳 지도"); }
+  setTimeout(() => {      // 칸이 화면에 붙은 뒤에 그려요
+    try {
+      const K = window.kakao.maps, a = new K.LatLng(pl.lat, pl.lon);
+      if (!kmap) {
+        kmap = new K.Map(mapBox, { center: a, level: 4 });
+        kmap.setDraggable(false); kmap.setZoomable(false);
+      } else kmap.relayout();
+      const ov = (text, cls) => { const e = document.createElement("span"); e.className = "tag k" + (cls ? " " + cls : ""); e.textContent = text; return e; };
+      if (!kPlace) kPlace = new K.CustomOverlay({ position: a, content: ov("만날 곳"), yAnchor: 1, map: kmap });
+      else kPlace.setPosition(a);
+      const bp = d.buyer_pos;
+      let b = null;
+      if (okPos(bp)) {
+        b = new K.LatLng(bp.lat, bp.lon);
+        if (!kBuyer) kBuyer = new K.CustomOverlay({ position: b, content: ov("구매자", "buyer"), yAnchor: 1, map: kmap });
+        else kBuyer.setPosition(b);
+      } else if (kBuyer) { kBuyer.setMap(null); kBuyer = null; }
+      // 칸 크기도 열쇠에 넣어요: 칸이 0 크기일 때 맞춘 뒤 그대로 남지 않게
+      const fk = JSON.stringify([pl.lat, pl.lon, b && [bp.lat, bp.lon], mapBox.offsetWidth, mapBox.offsetHeight]);
+      if (fk !== lastFit && mapBox.offsetWidth > 0 && mapBox.offsetHeight > 0) {
+        lastFit = fk;
+        kmap.relayout();
+        if (b && near(pl, bp)) { kmap.setLevel(3); kmap.setCenter(new K.LatLng((pl.lat + bp.lat) / 2, (pl.lon + bp.lon) / 2)); }
+        else if (b) { const bb = new K.LatLngBounds(); bb.extend(a); bb.extend(b); kmap.setBounds(bb, 40, 40, 40, 40); }
+        else kmap.setCenter(a);
+      }
+    } catch (e) { dropMap(); kakaoState = "fail"; draw(); }
+  }, 0);
+  return mapBox;
+}
+function mapFor(d) {
+  const pl = d.place;
+  if (!okPos(pl)) { dropMap(); return null; }
+  loadKakao();
+  if (kakaoState === "ok") return kakaoFor(d);
+  if (kakaoState !== "fail") return null;          // 카카오를 기다리는 동안은 글만 (최대 3초)
+  if (kmap) dropMap();
+  return leafFor(d);
+}
+function leafFor(d) {
+  const pl = d.place;
+  loadLeaflet();
+  if (leafletState !== "ok") return null;
+  try {
+    const Lf = window.L;
+    if (!map) {
+      mapBox = h("div", { class: "map" });
+      mapBox.setAttribute("aria-label", "만날 곳 지도");
+      map = Lf.map(mapBox, { dragging: false, zoomControl: false, scrollWheelZoom: false, touchZoom: false,
+                             doubleClickZoom: false, boxZoom: false, keyboard: false, attributionControl: true });
+      map.attributionControl.setPrefix(false);
+      Lf.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+      map.setView([pl.lat, pl.lon], 15);
+    }
+    const a = [pl.lat, pl.lon];
+    if (!pinPlace) pinPlace = Lf.marker(a, { icon: tag("만날 곳"), keyboard: false, interactive: false }).addTo(map);
+    else pinPlace.setLatLng(a);
+    const bp = d.buyer_pos;
+    if (okPos(bp)) {
+      const b = [bp.lat, bp.lon];
+      if (!pinBuyer) pinBuyer = Lf.marker(b, { icon: tag("구매자", "buyer"), keyboard: false, interactive: false }).addTo(map);
+      else pinBuyer.setLatLng(b);
+    } else if (pinBuyer) { pinBuyer.remove(); pinBuyer = null; }
+    const pts = pinBuyer ? [a, pinBuyer.getLatLng()] : [a];
+    // 칸이 화면에 붙고 크기가 생긴 뒤에 맞춰요. 칸 크기도 열쇠에 넣어요
+    setTimeout(() => {
+      if (!map || !mapBox.offsetWidth || !mapBox.offsetHeight) return;
+      const fk = JSON.stringify([pts, mapBox.offsetWidth, mapBox.offsetHeight]);
+      if (fk === lastFit) return;
+      lastFit = fk;
+      map.invalidateSize();
+      if (pts.length > 1 && near(pl, bp)) map.setView([(pl.lat + bp.lat) / 2, (pl.lon + bp.lon) / 2], 17);
+      else if (pts.length > 1) map.fitBounds(pts, { padding: [40, 40], maxZoom: 17 });
+      else map.setView(a, 15);
+    }, 0);
+    return mapBox;
+  } catch (e) { dropMap(); leafletState = "fail"; return null; }
+}
+// 지도 상태가 바뀌면 거래 화면만 다시 맞춰요
+function draw() { for (const L of layers) if (L.name === "deal" && L.update) L.update(); }
+window.addEventListener("resize", () => { lastFit = ""; draw(); if (map) setTimeout(() => map && map.invalidateSize(), 0); });
+
+function openDeal() { if (!st || !st.deal) return; if (st.deal.ask && !sentReview) return openReview(); if (layers.some((L) => L.name === "deal")) return; pushLayer(dealLayer()); }
+function dealLayer() {
+  const el = h("section", { class: "layer deal", role: "dialog", "aria-modal": "true", "aria-label": "거래 중" });
+  const body = h("div", { class: "lbody" });
+  const zone = h("div", { class: "mapzone" });
+  const bk = h("button", { class: "floatback", type: "button", "aria-label": "뒤로", html: svg("back") }); bk.onclick = () => back();
+  const slot = h("div", { class: "slot" }), msg = h("div", { class: "mapnote" });
+  zone.append(slot, msg, bk);
+  const panel = h("div", { class: "panel" });
+  body.append(zone, panel);
+  el.append(body);
+  const L = { name: "deal", el };
+  let key = "";
+  L.update = () => {
+    const d = st && st.deal;
+    if (!d) { closeLayer(L); toast("거래가 끝났어요. 물건 상태는 홈에서 볼 수 있어요."); return; }
+    if (d.ask && !sentReview) { replaceLayer(L, reviewLayer()); return; }
+    const pn = placeName(d);
+    const box = pn ? mapFor(d) : null;
+    if (!pn) dropMap();
+    if (box) { if (box.parentNode !== slot) slot.replaceChildren(box); msg.replaceChildren(); }
+    else {
+      slot.replaceChildren();
+      const failed = pn && okPos(d.place) && kakaoState === "fail" && leafletState === "fail";
+      const noPos = pn && !okPos(d.place);
+      msg.replaceChildren(!pn ? note("info", "clock", "만날 곳을 정하는 중이에요", "정해지면 이 자리에 지도가 열려요. 따로 할 일은 없어요.")
+        : (failed || noPos) ? note("info", "pin", "지도를 불러오지 못했어요", "만날 곳: " + pn + ". 내비에서 이 이름으로 찾아가 주세요.")
+        : h("div", { class: "spin", "aria-label": "지도를 불러오는 중" }));
+    }
+    const k = JSON.stringify([d, st.car]);
+    if (k === key) return;
+    key = k;
+    const parts = [h("div", { class: "eyebrow", style: "color:var(--brand);font-size:13px;font-weight:700", text: pn ? "거래가 정해졌어요" : "수락했어요" })];
+    if (pn && typeof d.buyer_eta_min === "number") parts.push(h("p", { class: "eta" }, [h("em", { text: d.buyer_eta_min + "분" }), " 뒤 구매자가 도착해요"]));
+    else parts.push(h("p", { class: "eta", text: pn ? "만날 곳에서 구매자를 만나요" : "만날 곳을 정하는 중이에요" }));
+    if (pn) parts.push(h("p", { class: "place" }, [ico("pin", "s18"), h("b", { text: pn })]));
+    if (d.item) parts.push(h("div", { class: "mini" }, [thumb(photoFor(d.item)), h("div", { class: "it" }, [h("div", { class: "nm", text: d.item.name }),
+      h("div", { class: "sub", text: won(d.item.price) + (d.buyer ? " · " + d.buyer.nick + " · " + rate(d.buyer.rating) : "") })])]));
+    if (d.buyer && d.buyer.plate4) parts.push(h("div", { class: "plate" }, [ico("car"), h("span", { text: "상대 차 번호 끝" }), h("b", { text: d.buyer.plate4 })]));
+    // 취소는 폰이 직접 판 거래(물음이 아직 없을 때)만. 차 거래는 서버가 취소를 받지 않아요
+    if (!d.ask) parts.push(btn("거래 취소하기", "danger-text", (b) => cancelDeal(b)));
+    panel.replaceChildren(...parts);
+  };
+  L.onClose = () => dropMap();
+  setTimeout(() => L.update(), 0);
+  return L;
+}
+async function cancelDeal(b) {
+  if (!(await sheet({ title: "거래를 취소할까요?", text: "구매자에게 취소가 알려지고, 물건은 다시 판매 중이 돼요. 되돌릴 수 없어요.", ok: "거래 취소하기", danger: true }))) return;
+  const undo = busy(b, "취소하는 중…");
+  let r = null; try { r = await api("POST", "/phone/deal/cancel", {}); } catch (e) {}
+  undo();
+  if (r && r.status === 401) return;
+  if (r && r.status === 404) { toast("이 거래는 여기서 취소할 수 없어요. 차에서 끝내 주세요."); refresh(); return; }
+  if (!r || r.status !== 200) { toast(failText(r, T.net)); return; }
+  toast("거래를 취소했어요. 물건은 다시 판매 중이에요.");
+  refresh();
+}
+
+// ───────── 거래 뒤 별점 (한 화면) ─────────
+function openReview() { if (!asking()) return; if (layers.some((L) => L.name === "review")) return; pushLayer(reviewLayer()); }
+function reviewLayer() {
+  const d = st.deal;
+  const f = frame({ title: "", close: true, foot: true });
+  const L = { name: "review", el: f.el };
+  star = null;
+  const peer = d.buyer || {};
+  const stars = h("div", { class: "stars", role: "radiogroup", "aria-label": "별점" });
+  const sel = h("p", { class: "weak", style: "text-align:center" });
+  const paint = () => {
+    stars.querySelectorAll("button").forEach((b) => { const n = Number(b.dataset.n); b.classList.toggle("on", star !== null && (n === 0 ? star === 0 : n <= star && star > 0)); b.setAttribute("aria-checked", star === n ? "true" : "false"); });
+    sel.textContent = star === null ? "고르지 않으면 별점 없이 보내요" : star + "점을 골랐어요 · 다시 누르면 지워져요";
+  };
+  for (let n = 0; n <= 5; n++) {
+    const b = h("button", { type: "button", role: "radio", "data-n": String(n), "aria-label": "별점 " + n, class: n === 0 ? "zero" : "" });
+    if (n === 0) b.textContent = "0"; else b.innerHTML = svg("star");
+    b.onclick = () => { star = star === n ? null : n; paint(); };
+    stars.append(b);
+  }
+  paint();
+  f.body.style.textAlign = "center"; f.body.style.alignItems = "center"; f.body.style.gap = "20px";
+  f.body.append(h("div", { style: "height:8px" }), h("div", { class: "ava lg", text: initial(peer.nick) }),
+    h("div", {}, [h("h1", { class: "ltitle", text: (peer.nick ? peer.nick + "님과의 거래," : "오늘 거래,") }), h("h1", { class: "ltitle", text: "어땠어요?" })]),
+    h("p", { class: "sub", style: "margin-top:-12px", text: d.item ? d.item.name + " · " + won(d.item.price) : "" }),
+    h("div", { style: "height:8px" }), h("b", {}, ["별점을 주세요 ", h("span", { class: "weak", text: "(선택)" })]), stars, sel);
+  const err = errLine("");
+  const send = async (done, b) => {
+    const body = { done };
+    if (done && star !== null) body.stars = star;
+    setErr(err, "");
+    const undo = busy(b, "보내는 중…");
+    let r = null; try { r = await api("POST", "/phone/deal/review", body); } catch (e) {}
+    undo();
+    if (r && r.status === 401) return;
+    if (r && r.status === 404) { sentReview = true; closeLayer(L); toast("이미 끝난 거래예요."); refresh(); return; }
+    if (!r || r.status !== 200) { setErr(err, failText(r, T.net)); return; }
+    sentReview = true; drawn = "";
+    closeLayer(L);
+    toast(done ? "보냈어요. 고마워요." : "보냈어요. 물건은 다시 판매 중이 돼요.");
+    refresh();
+  };
+  f.foot.append(err, h("p", { class: "why", text: "별점은 상대의 거래 정보에 쌓여요" }), btn("거래했어요", "primary", (b) => send(true, b)), btn("거래 못 했어요", "line", (b) => send(false, b)));
+  L.update = () => { if (!st.deal) closeLayer(L); };
+  return L;
+}
+
+// ───────── 급구 답하기 ─────────
+function openUrgent(id) {
+  const u = ((st && st.urgents) || []).find((x) => x.id === id); if (!u) return;
+  const f = frame({ title: "급구에 답하기", foot: true });
+  const L = { name: "urgent", el: f.el };
+  const name = h("input", { class: "inp", id: "uName", type: "text", maxlength: "60", autocomplete: "off", placeholder: "예) " + u.name });
+  const desc = h("textarea", { class: "inp", id: "uDesc", maxlength: "200", rows: "2", placeholder: "상태, 구성품 등" });
+  const price = h("input", { class: "inp", id: "uPrice", type: "text", inputmode: "numeric", autocomplete: "off", placeholder: "값" });
+  let free = false;
+  const freeBtn = btn("나눔", "soft", () => { free = !free; freeBtn.setAttribute("aria-pressed", free); freeBtn.className = "btn " + (free ? "primary" : "soft"); price.disabled = free; if (free) price.value = ""; setErr(pErr, ""); });
+  freeBtn.style.flex = "none"; freeBtn.style.width = "88px"; freeBtn.setAttribute("aria-pressed", "false");
+  const nErr = errLine(""), pErr = errLine(""), err = errLine("");
+  price.oninput = () => { const v = price.value.replace(/\D/g, "").slice(0, 10); price.value = v ? Number(v).toLocaleString("ko-KR") : ""; };
+  f.body.append(h("div", { class: "card fill" }, [h("div", { class: "eyebrow am", html: svg("bolt", "s14") + "<span>급구 · " + (u.nick || "근처 운전자").replace(/[<>&]/g, "") + "</span>" }),
+      h("h3", { text: u.name }), u.desc ? h("p", { class: "sub", text: u.desc }) : null]),
+    h("div", { class: "stack" }, [
+      h("div", { class: "field" }, [h("label", { for: "uName", text: "상품명" }), name, nErr]),
+      h("div", { class: "field" }, [h("label", { for: "uDesc" }, ["간단한 설명 ", h("span", { class: "opt", text: "(선택)" })]), desc]),
+      h("div", { class: "field" }, [h("label", { for: "uPrice", text: "값" }), h("div", { class: "inline" }, [h("div", { class: "suffix", style: "flex:1" }, [price, h("span", { text: "원" })]), freeBtn]), pErr]),
+    ]));
+  const send = btn("답 보내기", "primary", async (b) => {
+    const nm = name.value.trim(), pr = free ? 0 : parseInt(price.value.replace(/\D/g, ""), 10);
+    setErr(nErr, ""); setErr(pErr, ""); setErr(err, "");
+    if (!nm) { setErr(nErr, "상품명을 넣어 주세요"); name.focus(); return; }
+    if (!(pr >= 0)) { setErr(pErr, "값을 넣어 주세요. 나눔이면 나눔을 눌러 주세요"); price.focus(); return; }
+    if (pr > 1000000000) { setErr(pErr, T.bigPrice); return; }
+    const undo = busy(b, "보내는 중…");
+    let r = null; try { r = await api("POST", "/phone/urgent/reply", { id: u.id, name: nm, desc: desc.value.trim().slice(0, 200), price: pr }); } catch (e) {}
+    undo();
+    if (r && r.status === 401) return;
+    if (r && r.status === 404) { closeLayer(L); toast("이미 끝난 급구예요."); refresh(); return; }
+    if (!r || r.status !== 200) { setErr(err, failText(r, T.net)); return; }
+    replied.add(u.id); drawn = "";
+    closeLayer(L); toast("답을 보냈어요"); refresh();
+  });
+  f.foot.append(err, send);
+  L.update = () => { if (!((st && st.urgents) || []).some((x) => x.id === id)) closeLayer(L); };
+  L.beforeBack = () => true;
+  pushLayer(L);
+}
+
+// ───────── 물건 상세 ─────────
+function openItem(id) {
+  const f = frame({ title: "내 물건" });
+  const L = { name: "item", el: f.el, id };
+  let key = "";
+  L.update = () => {
+    const s = mine().sells.find((x) => x.id === id);
+    if (!s) { closeLayer(L); return; }
+    const k = JSON.stringify([s, st.car, st.me && st.me.home]); if (k === key) return; key = k;
+    const dealing = s.status === "deal";
+    const big = h("button", { class: "thumb", type: "button", style: "width:100%;height:auto;aspect-ratio:4/3;border-radius:16px", "aria-label": "사진 바꾸기" });
+    if (s.photo) { const im = h("img", { alt: "" }); im.src = photoSrc(s.photo); big.append(im); }
+    else big.append(h("div", { class: "empty", style: "padding:0" }, [ico("camera"), h("span", { class: "sub", text: "사진 넣기" })]));
+    big.onclick = () => changePhoto(s, big);
+    const chips = h("div", { class: "chips" });
+    chips.append(s.loc === "home" ? h("span", { class: "chip" }, [ico("home", "s14"), T.loc.home]) : h("span", { class: "chip g" }, [ico("car", "s14"), T.loc.car]));
+    chips.append(s.hidden ? h("span", { class: "chip" }, [ico("eyeoff", "s14"), "숨김"]) : h("span", { class: "chip" + (dealing ? " d" : ""), text: T.status[s.status] || T.status.sale }));
+    const info = h("div", { class: "stack" }, [chips, h("h1", { class: "ltitle", style: "overflow-wrap:anywhere", text: s.name }), h("p", { style: "font-size:24px;line-height:32px;font-weight:700", text: won(s.price) }),
+      s.desc ? h("p", { class: "sub", style: "font-size:16px;line-height:24px;white-space:pre-wrap", text: s.desc }) : null,
+      h("p", { class: "weak", text: s.loc === "home" ? "요청은 이 폰으로 와요" : (st.car ? "차 화면에 떠요. 요청은 차 화면으로 와요" : "차와 이어야 차 화면에 떠요") })]);
+    const acts = h("div", { class: "list" });
+    if (dealing) f.body.dataset.deal = "1";
+    acts.append(lrow("pen", "고치기", dealing ? "거래 중에는 고칠 수 없어요" : "이름, 가격, 설명, 위치", null, () => { if (!dealing) openSell(s); }));
+    acts.append(lrow("image", "사진 바꾸기", "", null, () => changePhoto(s, acts.children[1])));
+    acts.append(lrow(s.hidden ? "eye" : "eyeoff", s.hidden ? "다시 보이기" : "숨기기", s.hidden ? "다른 사람에게 다시 보여요" : "목록에는 남고 다른 사람에게 안 보여요", null,
+      (ev) => cmd("/phone/sell/hide", { id: s.id, hidden: !s.hidden }, null, null, s.hidden ? "다시 보이게 했어요" : "숨겼어요")));
+    if (!dealing) acts.append(lrow(s.status === "sold" ? "undo" : "checkc", s.status === "sold" ? "다시 판매 중으로" : "판매 완료로 바꾸기", "", null,
+      () => cmd("/phone/sell/status", { id: s.id, status: s.status === "sold" ? "sale" : "sold" }, null, null, s.status === "sold" ? "다시 판매 중으로 바꿨어요" : "판매 완료로 바꿨어요")));
+    const rm = lrow("trash", "목록에서 내리기", dealing ? "거래 중에는 내릴 수 없어요" : "", null, () => { if (!dealing) removeItem(s, L); }, true);
+    if (dealing) { rm.disabled = true; rm.style.opacity = ".45"; acts.children[0].disabled = true; acts.children[0].style.opacity = ".45"; }
+    acts.append(rm);
+    f.body.replaceChildren(big, info, acts);
+  };
+  L.update();
+  pushLayer(L);
+}
+function changePhoto(s, el) {
+  choose(async (file) => {
+    let jpg = null;
+    try { jpg = await shrink(file); } catch (e) { toast(T.badPhoto); return; }
+    toast("사진을 올리는 중이에요");
+    let r = null; try { r = await api("POST", "/phone/photo?item=" + encodeURIComponent(s.id), jpg, true); } catch (e) {}
+    if (r && r.status === 401) return;
+    if (r && r.status === 413) toast(T.bigPhoto); else if (!r || r.status !== 200) toast(failText(r, "사진을 바꾸지 못했어요. 다시 해 주세요.")); else toast("사진을 바꿨어요");
+    refresh();
+  });
+}
+async function removeItem(s, L) {
+  if (!(await sheet({ title: "‘" + s.name + "’" + josa(s.name) + " 목록에서 내릴까요?", text: "내린 물건은 되돌릴 수 없어요. 다시 팔려면 새로 올려야 해요.", ok: "목록에서 내리기", danger: true }))) return;
+  let r = null; try { r = await api("POST", "/phone/sell/remove", { id: s.id }); } catch (e) {}
+  if (r && r.status === 401) return;
+  if (r && (r.status === 200 || r.status === 404)) { await closeLayer(L); toast("목록에서 내렸어요"); refresh(); return; }
+  toast(failText(r, "내리지 못했어요. 다시 눌러 주세요."));
+}
+
+// ───────── 사진 고르기·줄이기 ─────────
+let pickFor = null;
+function choose(fn) { pickFor = fn; $("filePick").value = ""; $("filePick").click(); }
+$("filePick").onchange = () => { const f = $("filePick").files[0]; if (f && pickFor) pickFor(f); };
+// 긴 쪽 1280으로 줄여 JPEG로 (서버는 JPEG 머리만 받아요)
+async function shrink(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
+    const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    for (const q of [0.85, 0.7, 0.5]) {
+      const b = await new Promise((ok) => c.toBlob(ok, "image/jpeg", q));
+      if (b && b.size <= 2 * 1024 * 1024) return b;
+    }
+    throw new Error("big");
+  } finally { URL.revokeObjectURL(url); }
+}
+
+// 캡처로 채우기: 글자는 폰 안에서 읽어요. 서버로 보내지 않아요
+let tessLoading = null;
+function tess() {
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  if (!tessLoading) tessLoading = new Promise((ok, bad) => {
+    const s = document.createElement("script");
+    s.src = TESS; s.onload = () => ok(window.Tesseract); s.onerror = (e) => { tessLoading = null; bad(e); };
+    document.head.append(s);
+  });
+  return tessLoading;
+}
+function findPrice(line) {
+  const t = line.replace(/\s/g, "");
+  let m = t.match(/(\d+(?:[.,]\d+)?)?만(\d{1,4})?원/);           // 1.2만원, 3만 원, 만 원
+  if (m) {
+    const a = m[1] ? parseFloat(m[1].replace(",", ".")) : 1;
+    const v = Math.round(a * 10000) + (m[2] ? parseInt(m[2], 10) : 0);
+    if (v > 0) return v;
+  }
+  m = t.match(/(\d{1,3}(?:[,.]\d{3})+|\d+)원/);                    // 12,000원
+  if (m) { const v = parseInt(m[1].replace(/[,.]/g, ""), 10); if (v > 0) return v; }
+  return null;
+}
+const NOT_TITLE = /매너\s*온도|에서\s*보기|[가-힣]+(시|도)\s+[가-힣]+(구|군|시)\s+[가-힣]+(동|읍|면|가)|(분|시간|일|주|달)\s*전|채팅|관심|조회|끌올|팔로|판매중|예약중|거래완료|나눔|가격\s*제안|제안\s*불가|안전\s*결제|배송비|택배|번개페이|신고|공유|km|\d+\s*m\b|^[^\p{L}\p{N}]*$/u;
+function tidy(line) {
+  let s = line.replace(/\s+/g, " ").trim();
+  const parts = s.split(" ");
+  if (parts.length >= 3 && parts.filter((p) => p.length === 1).length / parts.length >= 0.6) s = parts.join("");  // 한 글자씩 띄어 읽은 줄
+  return s.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N})]+$/gu, "").slice(0, 60);
+}
+function parseCapture(text) {
+  const lines = text.split(/\n/).map(tidy).filter(Boolean);
+  let pi = -1, price = null;
+  for (let i = 0; i < lines.length; i++) { const p = findPrice(lines[i]); if (p !== null && p >= 100) { pi = i; price = p; break; } }
+  if (pi < 0) return { name: "", price: null };
+  let best = null, bestScore = -1e9;
+  for (let i = Math.max(0, pi - 4); i <= Math.min(lines.length - 1, pi + 3); i++) {
+    if (i === pi) continue;
+    const s = lines[i];
+    const han = (s.match(/[가-힣]/g) || []).length;
+    if (han < 2 || s.length < 2 || findPrice(s) !== null || NOT_TITLE.test(s)) continue;
+    const dist = i < pi ? pi - i : (i - pi) * 1.5;       // 위쪽 줄을 조금 더 쳐줘요
+    const score = (han / s.length) * 10 + Math.min(s.length, 20) - dist;
+    if (score > bestScore) { bestScore = score; best = s; }
+  }
+  return { name: best || "", price };
+}
+
+// ───────── 물건 올리기·고치기 (한 화면) ─────────
+function openSell(edit) {
+  if (layers.some((L) => L.name === "sell")) return;
+  const isEdit = !!edit;
+  const f = frame({ title: isEdit ? "물건 고치기" : "물건 올리기", close: true, foot: true });
+  const L = { name: "sell", el: f.el };
+  const S = { blob: null, photoId: "", loc: isEdit ? (edit.loc === "home" ? "home" : "car") : "car", busy: false, reading: false };
+  const firstEver = !isEdit && mine().sells.length + mine().wants.length === 0;
+  // 채우기 도우미 세 칸
+  const tPhoto = h("button", { class: "helper", type: "button" }, [ico("camera"), h("b", { text: "사진 넣기" }), h("span", { text: "찍거나 고르기" })]);
+  const tCap = h("button", { class: "helper", type: "button" }, [ico("scan"), h("b", { text: "캡처로 채우기" }), h("span", { text: "당근·번개 캡처" })]);
+  const tLink = h("button", { class: "helper", type: "button" }, [ico("link"), h("b", { text: "링크로 채우기" }), h("span", { text: "글 주소" })]);
+  const helperMsg = h("div");
+  const linkIn = h("input", { class: "inp", type: "text", inputmode: "url", autocomplete: "off", placeholder: "당근·번개장터 글 주소", "aria-label": "주소" });
+  const linkGo = btn("가져오기", "primary small", () => fetchLink());
+  const linkBox = h("div", { class: "inline", hidden: true }, [linkIn, linkGo]);
+  // 칸
+  const name = h("input", { class: "inp", id: "sName", type: "text", maxlength: "60", autocomplete: "off", placeholder: "예) 유아 카시트" });
+  const price = h("input", { class: "inp", id: "sPrice", type: "text", inputmode: "numeric", autocomplete: "off", placeholder: "0" });
+  const desc = h("textarea", { class: "inp", id: "sDesc", maxlength: "200", rows: "3", placeholder: "상태, 구성품 등" });
+  const nCnt = h("span", { class: "cnt", text: "0/60" }), dCnt = h("span", { class: "cnt", text: "0/200" });
+  const nAuto = h("p", { class: "autofill", hidden: true, html: svg("info", "s18") + "<span>읽어 온 값이에요. 확인해 주세요</span>" });
+  const pAuto = nAuto.cloneNode(true);
+  const nErr = errLine(""), pErr = errLine("");
+  const fmtPrice = () => { const v = price.value.replace(/\D/g, "").slice(0, 10); price.value = v ? Number(v).toLocaleString("ko-KR") : ""; };
+  // 위치
+  const locCar = h("button", { class: "loc", type: "button", role: "radio" }, [h("b", {}, [ico("car", "s20"), "차에 실었어요"]), h("span", { text: "달리며 팔아요" })]);
+  const locHome = h("button", { class: "loc", type: "button", role: "radio" }, [h("b", {}, [ico("home", "s20"), "집에 있어요"]), h("span", { text: "요청이 이 폰으로 와요" })]);
+  const locNote = h("div");
+  const homeIn = h("input", { class: "inp", type: "text", maxlength: "100", autocomplete: "off", placeholder: "예) 망원동 412", "aria-label": "집 주소" });
+  const homeErr = errLine("");
+  const homeGo = btn("정하기", "primary small", () => setHome());
+  let homeChange = false;
+  // 아래 고정
+  const submitErr = errLine("");
+  const go = btn(isEdit ? "저장하기" : "올리기", "primary", () => submit());
+  const why = h("p", { class: "why" });
+
+  if (isEdit) {
+    name.value = edit.name; price.value = String(edit.price); fmtPrice(); desc.value = edit.desc || "";
+    if (edit.photo) S.photoId = "";   // 지금 사진은 미리보기만 (보내지 않음)
+  }
+  const me = () => (st && st.me) || null;
+  const needHome = () => S.loc === "home" && !!me() && !me().home;
+  const values = () => ({ name: name.value.trim(), price: parseInt(price.value.replace(/\D/g, ""), 10), desc: desc.value.trim().slice(0, 200) });
+  const dirty = () => {
+    const v = values();
+    if (isEdit) return v.name !== edit.name || String(v.price) !== String(edit.price) || v.desc !== (edit.desc || "") || S.loc !== (edit.loc === "home" ? "home" : "car") || !!S.blob;
+    return !!(v.name || price.value || v.desc || S.blob || S.photoId);
+  };
+  function paintPhoto() {
+    const src = S.blob ? URL.createObjectURL(S.blob) : S.photoId ? photoSrc(S.photoId) : (isEdit && edit.photo ? photoSrc(edit.photo) : "");
+    tPhoto.replaceChildren();
+    if (src) { tPhoto.classList.add("on"); tPhoto.append(h("img", { alt: "고른 사진", src }), h("span", { class: "ph", text: "사진 바꾸기" })); }
+    else { tPhoto.classList.remove("on"); tPhoto.append(ico("camera"), h("b", { text: "사진 넣기" }), h("span", { text: "찍거나 고르기" })); }
+  }
+  function paintLoc() {
+    locCar.setAttribute("aria-checked", S.loc === "car"); locHome.setAttribute("aria-checked", S.loc === "home");
+    const m = me();
+    if (S.loc === "home" && m && (!m.home || homeChange)) {
+      if (!locNote._home) {
+        locNote._home = h("div", { class: "note info", style: "flex-direction:column;align-items:stretch;gap:12px" }, [
+          h("div", { style: "display:flex;gap:10px" }, [ico("info", "s20"), h("div", { class: "nt" }, [h("b", { text: T.homeWhy }), h("span", { text: T.homeSub })])]),
+          h("div", { class: "inline" }, [homeIn, homeGo]), homeErr]);
+      }
+      if (locNote.firstChild !== locNote._home) locNote.replaceChildren(locNote._home);
+    } else if (S.loc === "home" && m && m.home) {
+      const ch = btn("바꾸기", "text", () => { homeChange = true; paintLoc(); homeIn.focus(); });
+      locNote.replaceChildren(note("ok", "checkc", "집 위치: " + (m.home.gu || "정했어요"), "구 이름까지만 남에게 보여요", ch));
+    } else if (S.loc === "car" && st && !st.car) {
+      locNote.replaceChildren(note("info", "car", "차와 이어야 차 화면에 떠요", "올려 두고 나중에 이어도 돼요.", btn("차와 잇기", "small soft", () => openPair())));
+    } else locNote.replaceChildren();
+    paintWhy();
+  }
+  function paintWhy() {
+    const v = values();
+    let w = "";
+    if (S.busy) w = "";
+    else if (S.reading) w = "글자를 다 읽으면 올릴 수 있어요";
+    else if (!v.name) w = "이름을 넣으면 " + (isEdit ? "저장할" : "올릴") + " 수 있어요";
+    else if (!price.value) w = "가격을 넣으면 " + (isEdit ? "저장할" : "올릴") + " 수 있어요";
+    else if (needHome() || (S.loc === "home" && homeChange && !me().home)) w = "집 위치를 정하면 올릴 수 있어요";
+    why.textContent = w;
+    go.disabled = !!w || S.busy;
+  }
+  name.oninput = () => { nCnt.textContent = name.value.length + "/60"; nAuto.hidden = true; setErr(nErr, ""); name.classList.remove("bad"); paintWhy(); };
+  price.oninput = () => { fmtPrice(); pAuto.hidden = true; setErr(pErr, ""); price.classList.remove("bad"); paintWhy(); };
+  desc.oninput = () => { dCnt.textContent = desc.value.length + "/200"; };
+  locCar.onclick = () => { S.loc = "car"; paintLoc(); };
+  locHome.onclick = () => { S.loc = "home"; paintLoc(); if (needHome()) setTimeout(() => homeIn.focus(), 50); };
+  homeIn.addEventListener("keydown", (e) => { if (e.key === "Enter") setHome(); });
+  linkIn.addEventListener("keydown", (e) => { if (e.key === "Enter") fetchLink(); });
+
+  function showHelperMsg(node) { helperMsg.replaceChildren(node || ""); }
+  tPhoto.onclick = () => choose(async (file) => {
+    try { S.blob = await shrink(file); S.photoId = ""; paintPhoto(); showHelperMsg(); paintWhy(); }
+    catch (e) { showHelperMsg(note("bad", "alert", T.badPhoto, "")); }
+  });
+  tCap.onclick = () => choose(async (file) => {
+    S.reading = true; paintWhy(); tCap.classList.add("on");
+    showHelperMsg(h("div", { class: "stack", style: "gap:8px" }, [h("p", { class: "sub", text: T.reading + ". 글자는 폰 안에서만 읽어요." }), h("div", { class: "progress" })]));
+    let got = { name: "", price: null };
+    try {
+      S.blob = await shrink(file); S.photoId = ""; paintPhoto();            // 캡처 그림을 사진으로 넣어요
+      const Tesseract = await tess();
+      const r = await Tesseract.recognize(file, "kor");
+      got = parseCapture((r && r.data && r.data.text) || "");
+    } catch (e) {}
+    S.reading = false; tCap.classList.remove("on");
+    if (!got.name && got.price === null) { showHelperMsg(note("bad", "alert", "글자를 읽지 못했어요", "캡처는 사진으로 넣어 두었으니 이름과 가격을 직접 넣어 주세요.")); paintWhy(); return; }
+    if (got.name) { name.value = got.name; name.oninput(); nAuto.hidden = false; }
+    if (got.price !== null) { price.value = String(got.price); price.oninput(); pAuto.hidden = false; }
+    showHelperMsg(got.name && got.price !== null ? null : note("info", "info", T.linkPart, ""));
+    paintWhy();
+  });
+  tLink.onclick = () => { linkBox.hidden = !linkBox.hidden; tLink.classList.toggle("on", !linkBox.hidden); if (!linkBox.hidden) linkIn.focus(); };
+  async function fetchLink() {
+    const url = linkIn.value.trim();
+    if (!url) { showHelperMsg(note("bad", "alert", "글 주소를 넣어 주세요", "당근이나 번개장터 글의 공유 주소를 붙여 넣어요.")); return; }
+    const undo = busy(linkGo, "가져오는 중…");
+    showHelperMsg(h("p", { class: "sub", text: T.linkLoading }));
+    let r = null; try { r = await api("POST", "/phone/link", { url }); } catch (e) {}
+    undo();
+    if (r && r.status === 401) return;
+    if (!r) { showHelperMsg(note("bad", "alert", T.linkFail, "")); return; }
+    if (r.status === 400 && r.j.why === "host") { showHelperMsg(note("bad", "alert", T.linkHost, "")); return; }
+    const j = r.j || {};
+    if (r.status !== 200 || (!j.name && (j.price === null || j.price === undefined) && !j.image)) { showHelperMsg(note("bad", "alert", T.linkFail, "")); return; }
+    if (j.name) { name.value = String(j.name).slice(0, 60); name.oninput(); nAuto.hidden = false; }
+    if (j.price !== null && j.price !== undefined) { price.value = String(j.price); price.oninput(); pAuto.hidden = false; }
+    if (j.desc) { desc.value = String(j.desc).slice(0, 200); desc.oninput(); }
+    if (j.image) { S.blob = null; S.photoId = j.image; paintPhoto(); }
+    showHelperMsg(j.name && j.price !== null && j.price !== undefined ? note("ok", "checkc", "가져왔어요. 확인하고 올려 주세요", "") : note("info", "info", T.linkPart, ""));
+    linkIn.value = ""; linkBox.hidden = true; tLink.classList.remove("on");
+    paintWhy();
+  }
+  async function setHome() {
+    const query = homeIn.value.trim();
+    setErr(homeErr, ""); homeIn.classList.remove("bad");
+    if (!query) { setErr(homeErr, "집 주소를 넣어 주세요. 예) 망원동 412"); homeIn.classList.add("bad"); homeIn.focus(); return; }
+    const undo = busy(homeGo, "찾는 중…");
+    let r = null; try { r = await api("POST", "/phone/home", { query }); } catch (e) {}
+    undo();
+    if (r && r.status === 401) return;
+    if (!r) { setErr(homeErr, T.net); return; }
+    if (r.status !== 200 || !r.j.ok) { setErr(homeErr, T.noHome); homeIn.classList.add("bad"); return; }
+    if (st && st.me) st.me.home = { gu: r.j.gu };
+    homeIn.value = ""; homeChange = false; paintLoc(); refresh();
+  }
+  async function submit() {
+    const v = values();
+    setErr(submitErr, ""); setErr(nErr, ""); setErr(pErr, "");
+    let bad = null;
+    if (!v.name) { setErr(nErr, T.needName); name.classList.add("bad"); bad = bad || name; }
+    if (!price.value) { setErr(pErr, T.needPrice); price.classList.add("bad"); bad = bad || price; }
+    else if (!(v.price >= 1)) { setErr(pErr, T.zeroPrice); price.classList.add("bad"); bad = bad || price; }
+    else if (v.price > 1000000000) { setErr(pErr, T.bigPrice); price.classList.add("bad"); bad = bad || price; }
+    if (bad) { bad.focus(); return; }
+    if (needHome()) { paintLoc(); homeIn.focus(); return; }
+    S.busy = true; paintWhy();
+    const undo = busy(go, isEdit ? "저장하는 중…" : "올리는 중…");
+    const done = (msg) => { undo(); S.busy = false; paintWhy(); if (msg) setErr(submitErr, msg); };
+    let r = null;
+    try {
+      if (isEdit) {
+        r = await api("POST", "/phone/sell/update", { id: edit.id, name: v.name, price: v.price, desc: v.desc, loc: S.loc });
+        if (r.status === 401) return;
+        if (r.status === 404) return done("이미 내려간 물건이에요.");
+        if (r.status === 400) return done("고치지 못했어요. 이름은 60자, 설명은 200자까지 넣을 수 있어요.");
+        if (r.status !== 200) return done(failText(r, "저장하지 못했어요. 다시 눌러 주세요."));
+        if (S.blob) {
+          const p = await api("POST", "/phone/photo?item=" + encodeURIComponent(edit.id), S.blob, true);
+          if (p.status !== 200) toast("내용은 고쳤지만 사진은 못 바꿨어요. 다시 해 주세요.");
+        }
+      } else {
+        let photo = S.photoId;
+        if (S.blob) {
+          const p = await api("POST", "/phone/photo", S.blob, true);
+          if (p.status === 401) return;
+          if (p.status === 413 || (p.status === 400 && p.j.why === "jpeg")) return done(T.bigPhoto);
+          if (p.status !== 200) return done(failText(p, "사진을 올리지 못했어요. 다시 눌러 주세요."));
+          photo = p.j.photo;
+        }
+        r = await api("POST", "/phone/sell", { name: v.name, price: v.price, photo, desc: v.desc, loc: S.loc });
+        if (r.status === 401) return;
+        if (r.status === 400 && r.j.why === "empty") { done(); setErr(nErr, T.needName); return; }
+        if (r.status === 409) return done(T.full);
+        if (r.status !== 200) return done(failText(r, "올리지 못했어요. 다시 눌러 주세요."));
+      }
+    } catch (e) { return done(isEdit ? "저장하지 못했어요. 다시 눌러 주세요." : "올리지 못했어요. 다시 눌러 주세요."); }
+    undo(); S.busy = false;
+    const loc = S.loc;
+    L.force = true;
+    await closeLayer(L);
+    if (!isEdit && tab !== "home") setTab("home");
+    if (!isEdit && loc === "car" && st && !st.car) toast("올렸어요. 차와 이으면 차 화면에 떠요.", "차와 잇기", () => openPair());
+    else toast(isEdit ? "고쳤어요" : "올렸어요");
+    refresh();
+    if (firstEver) setTimeout(() => maybeAskNotify(true), 600);
+  }
+  L.beforeBack = () => {
+    if (!dirty() || S.busy) return !S.busy;
+    sheet({ title: isEdit ? "고친 내용을 버릴까요?" : "쓰던 내용을 지울까요?", text: isEdit ? "닫으면 고친 내용이 저장되지 않아요." : "닫으면 넣은 사진과 글이 지워져요.", ok: isEdit ? "버리고 닫기" : "지우고 닫기", cancel: "계속 쓰기", danger: true })
+      .then((yes) => { if (yes) { L.force = true; back(); } });
+    return false;
+  };
+  L.update = () => paintLoc();
+  L.api = { name, price, desc, nAuto, pAuto, nErr, pErr, submitErr, homeErr, homeIn, S, paintPhoto, paintLoc, paintWhy, showHelperMsg, submit, locHome };
+
+  f.body.append(
+    h("div", { class: "stack" }, [h("div", { class: "flabel" }, ["채우기 도우미 ", h("span", { class: "opt", text: "누르면 아래 칸을 채워요" })]), h("div", { class: "helpers" }, [tPhoto, tCap, tLink]), linkBox, helperMsg]),
+    h("div", { class: "stack", style: "gap:20px" }, [
+      h("div", { class: "field" }, [h("label", { for: "sName" }, ["이름", nCnt]), name, nAuto, nErr]),
+      h("div", { class: "field" }, [h("label", { for: "sPrice", text: "가격" }), h("div", { class: "suffix" }, [price, h("span", { text: "원" })]), pAuto, pErr]),
+      h("div", { class: "field" }, [h("label", { for: "sDesc" }, [h("span", {}, ["간단한 설명 ", h("span", { class: "opt", text: "(선택)" })]), dCnt]), desc]),
+    ]),
+    h("div", { class: "stack" }, [h("div", { class: "flabel", text: "물건이 어디 있나요?" }), h("div", { class: "locs", role: "radiogroup", "aria-label": "물건 위치" }, [locCar, locHome]), locNote]));
+  f.foot.append(submitErr, go, why);
+  if (isEdit) { nCnt.textContent = name.value.length + "/60"; dCnt.textContent = desc.value.length + "/200"; }
+  paintPhoto(); paintLoc();
+  pushLayer(L);
+  return L;
+}
+
+// ───────── 차와 잇기·번호판·닉네임·집 위치 ─────────
+function simpleForm(o) {
+  const f = frame({ title: o.title, foot: true });
+  const L = { name: o.name, el: f.el };
+  const err = errLine("");
+  const go = btn(o.button, "primary", async (b) => { setErr(err, ""); await o.submit(b, err, L); });
+  f.body.append(...o.body);
+  f.foot.append(err, go);
+  L.beforeBack = () => true;
+  pushLayer(L);
+  setTimeout(() => { const i = f.body.querySelector("input"); if (i && !MOCK) i.focus(); }, 250);
+  return { L, err, go, body: f.body };
+}
+function openPair() {
+  if (layers.some((L) => L.name === "pair")) return;
+  const code = h("input", { class: "inp", id: "pCode", type: "text", inputmode: "numeric", autocomplete: "off", maxlength: "7", placeholder: "예) 482931", style: "font-size:22px;letter-spacing:4px;font-variant-numeric:tabular-nums" });
+  const plate = h("input", { class: "inp", id: "pPlate", type: "text", autocomplete: "off", maxlength: "12", placeholder: "예) 12가 3456" });
+  const cErr = errLine(""), plErr = errLine("");
+  code.oninput = () => { code.classList.remove("bad"); setErr(cErr, ""); };
+  plate.oninput = () => { plate.classList.remove("bad"); setErr(plErr, ""); };
+  const steps = h("div", { class: "card fill", style: "gap:10px" }, [
+    h("p", { class: "sub" }, [h("b", { style: "color:var(--text)", text: "1. " }), "차에서 로드마켓을 열어요"]),
+    h("p", { class: "sub" }, [h("b", { style: "color:var(--text)", text: "2. " }), "홈에 뜬 폰 연결 번호를 아래에 넣어요"])]);
+  const fm = simpleForm({ name: "pair", title: "차와 잇기", button: "차와 잇기", body: [
+    h("div", { class: "stack" }, [h("h1", { class: "ltitle", text: "차에 뜬 번호를 넣어 주세요" }), h("p", { class: "sub", text: "한 번 이으면 차에 실은 물건이 차 화면에 뜨고, 그 요청도 차 화면으로 와요." })]),
+    steps,
+    h("div", { class: "stack", style: "gap:20px" }, [
+      h("div", { class: "field" }, [h("label", { for: "pCode", text: "폰 연결 번호" }), code, cErr]),
+      h("div", { class: "field" }, [h("label", { for: "pPlate" }, [h("span", {}, ["차 번호판 ", h("span", { class: "opt", text: "(선택)" })])]), plate,
+        h("p", { class: "help", text: "만날 때 상대가 내 차를 알아보도록 번호판 뒤 네 자리만 보여 줘요." }), plErr]),
+    ])],
+    submit: async (b, err, L) => {
+      const c = code.value.replace(/\D/g, ""), p = plate.value.trim().slice(0, 12);
+      if (!c) { setErr(cErr, T.needCode); code.classList.add("bad"); code.focus(); return; }
+      if (p && !/\d{4}$/.test(p)) { setErr(plErr, T.plate400); plate.classList.add("bad"); plate.focus(); return; }
+      const undo = busy(b, "잇는 중…");
+      let r = null; try { r = await api("POST", "/phone/pair", p ? { code: c, plate: p } : { code: c }); } catch (e) {}
+      undo();
+      if (r && r.status === 401) return;
+      if (r && r.status === 200) { await closeLayer(L); toast("차와 이었어요"); refresh(); return; }
+      if (r && r.status === 403) { setErr(cErr, T.code403); code.classList.add("bad"); return; }
+      if (r && r.status === 400 && r.j.why === "plate") { setErr(plErr, T.plate400); plate.classList.add("bad"); return; }
+      if (r && r.status === 429) { setErr(err, T.wait429); return; }
+      setErr(err, failText(r, "잇지 못했어요. 다시 눌러 주세요."));
+    } });
+  fm.L.update = () => {};
+  fm.L.api = { cErr, plErr, code, plate };
+  return fm;
+}
+function openPlate() {
+  const plate = h("input", { class: "inp", id: "plIn", type: "text", autocomplete: "off", maxlength: "12", placeholder: "예) 12가 3456" });
+  const pErr = errLine("");
+  simpleForm({ name: "plate", title: "번호판 바꾸기", button: "번호판 바꾸기", body: [
+    h("div", { class: "field" }, [h("label", { for: "plIn", text: "차 번호판" }), plate, h("p", { class: "help", text: "만날 때 상대가 내 차를 알아보도록 번호판 뒤 네 자리만 보여 줘요." }), pErr])],
+    submit: async (b, err, L) => {
+      const p = plate.value.trim().slice(0, 12);
+      if (!p || !/\d{4}$/.test(p)) { setErr(pErr, T.plate400); plate.classList.add("bad"); plate.focus(); return; }
+      const undo = busy(b, "바꾸는 중…");
+      let r = null; try { r = await api("POST", "/phone/plate", { plate: p }); } catch (e) {}
+      undo();
+      if (r && r.status === 401) return;
+      if (r && r.status === 200) { await closeLayer(L); toast("번호판을 바꿨어요" + (r.j.plate4 ? " · 번호 끝 " + r.j.plate4 : "")); refresh(); return; }
+      if (r && r.status === 400) { setErr(pErr, T.plate400); plate.classList.add("bad"); return; }
+      setErr(err, failText(r, "바꾸지 못했어요. 다시 눌러 주세요."));
+    } });
+}
+function openNick() {
+  const inp = h("input", { class: "inp", id: "nkIn", type: "text", autocomplete: "off", maxlength: "12" });
+  inp.value = (st && st.me && st.me.nick) || "";
+  const nErr = errLine("");
+  simpleForm({ name: "nick", title: "닉네임 바꾸기", button: "닉네임 바꾸기", body: [
+    h("div", { class: "field" }, [h("label", { for: "nkIn" }, ["닉네임", h("span", { class: "cnt", text: "12자까지" })]), inp, h("p", { class: "help", text: "상대에게는 닉네임, 거래 횟수, 별점만 보여요." }), nErr])],
+    submit: async (b, err, L) => {
+      const nick = inp.value.trim().replace(/\s+/g, " ").slice(0, 12);
+      if (!nick) { setErr(nErr, "닉네임을 넣어 주세요"); inp.classList.add("bad"); inp.focus(); return; }
+      const undo = busy(b, "바꾸는 중…");
+      let r = null; try { r = await api("POST", "/phone/nick", { nick }); } catch (e) {}
+      undo();
+      if (r && r.status === 401) return;
+      if (r && r.status === 200) { await closeLayer(L); toast("닉네임을 바꿨어요"); refresh(); return; }
+      if (r && r.status === 400) { setErr(nErr, "닉네임은 1~12자로 넣어 주세요."); return; }
+      setErr(err, failText(r, "바꾸지 못했어요. 다시 눌러 주세요."));
+    } });
+}
+function openHomeAddr() {
+  const inp = h("input", { class: "inp", id: "haIn", type: "text", autocomplete: "off", maxlength: "100", placeholder: "예) 망원동 412" });
+  const hErr = errLine("");
+  const gu = st && st.me && st.me.home && st.me.home.gu;
+  const fm = simpleForm({ name: "homeaddr", title: "집 위치", button: "집 위치 정하기", body: [
+    h("div", { class: "stack" }, [h("h1", { class: "ltitle", text: gu ? "지금 집 위치는 " + gu + "예요" : "집 위치를 정해 주세요" }),
+      h("p", { class: "sub", text: "집 물건을 올릴 때 써요. 남에게는 구 이름까지만 보여요. 주소 글자는 저장하지 않아요." })]),
+    h("div", { class: "field" }, [h("label", { for: "haIn", text: gu ? "새 집 주소" : "집 주소" }), inp, h("p", { class: "help", text: "동 이름과 번지, 또는 도로명으로 넣어요." }), hErr])],
+    submit: async (b, err, L) => {
+      const query = inp.value.trim();
+      if (!query) { setErr(hErr, "집 주소를 넣어 주세요. 예) 망원동 412"); inp.classList.add("bad"); inp.focus(); return; }
+      const undo = busy(b, "찾는 중…");
+      let r = null; try { r = await api("POST", "/phone/home", { query }); } catch (e) {}
+      undo();
+      if (r && r.status === 401) return;
+      if (!r) { setErr(err, T.net); return; }
+      if (r.status !== 200 || !r.j.ok) { setErr(hErr, T.noHome); inp.classList.add("bad"); return; }
+      if (st && st.me) st.me.home = { gu: r.j.gu };
+      await closeLayer(L); toast("집 위치를 " + (r.j.gu || "정한 곳") + "(으)로 정했어요"); drawn = ""; refresh();
+    } });
+  fm.L.api = { hErr, inp };
+  return fm;
+}
+
+// ───────── 알림 허용 ─────────
+let notifyAskedThisRun = false;
+function maybeAskNotify(afterFirst) {
+  if (notifyAskedThisRun || !notifyOff()) return;
+  if (load("rm_notify_later") || load("rm_notify_asked")) return;
+  if (layers.length || screenNow !== "main") return;
+  const { sells, wants } = mine();
+  if (!afterFirst && !(sells.length || wants.length)) return;
+  if (!afterFirst && tab !== "home") return;
+  notifyAskedThisRun = true;
+  sheet({ title: "요청이 오면 알림으로 알려 드려요", text: "앱을 닫아 두어도 집 물건에 사겠다는 요청이 오면 바로 알 수 있어요. 요청은 3분 안에 답해야 해요.", ok: "알림 받기", cancel: "나중에" })
+    .then((yes) => { if (yes) askNotifyNow(); else save("rm_notify_later", "1"); });
+}
+function askNotifyNow() {
+  save("rm_notify_asked", "1");
+  try { const b = bridge(); if (b && b.askNotify) b.askNotify(); } catch (e) {}
+  setTimeout(() => { if (notifyOff()) toast("허용 창이 뜨지 않으면 폰 설정 → 앱 → 로드마켓 → 알림에서 켜 주세요."); drawn = ""; render(); }, 1500);
+}
+
+// ───────── 들어오기·나가기 ─────────
+function begin() { got = false; fails = 0; drawn = ""; showScreen("loading"); startPolling(); }
+function leave() {
+  token = ""; save("rm_phone", ""); st = null; got = false; drawn = ""; sentReview = false; fails = 0;
+  clearInterval(timer); timer = null;
+  closeAll();
+  setNet(false);
+  document.title = "로드마켓";
+  tab = "home"; for (const v of ["home", "wants", "me"]) $("v-" + v).hidden = v !== "home";
+  drawStart(); showScreen("start"); loginOptions();
+}
+
+// ───────── 개발용 가짜 상태 (file:// 에서만) ─────────
+function runMock(name) {
+  if (location.protocol !== "file:") return;
+  document.documentElement.classList.add("mock");
+  const hues = { p1: 160, p2: 30, p3: 210, p4: 280, p9: 100 };
+  photoSrc = (id) => "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="hsl(' + (hues[id] || 0) + ',30%,86%)"/><rect x="38" y="30" width="44" height="60" rx="8" fill="hsl(' + (hues[id] || 0) + ',30%,45%)"/></svg>');
+  const sells = [
+    { id: "s1", name: "다이치 주니어 카시트 (ISOFIX)", price: 35000, desc: "1년 사용, 깨끗해요", photo: "p1", loc: "car", status: "sale", hidden: false },
+    { id: "s2", name: "캠핑 의자 2개 일괄", price: 20000, desc: "", photo: "p2", loc: "car", status: "deal", hidden: false },
+    { id: "s4", name: "차량용 공기청정기", price: 15000, desc: "", photo: "p3", loc: "car", status: "sale", hidden: true },
+    { id: "s3", name: "리안 솔로 유모차", price: 80000, desc: "바퀴 상태 좋아요. 레인커버 같이 드려요.", photo: "p4", loc: "home", status: "sale", hidden: false },
+    { id: "s5", name: "아이폰 13 미니 128GB", price: 410000, desc: "", photo: "", loc: "home", status: "sold", hidden: false },
+  ];
+  const me0 = { nick: "망원동캠퍼", deals: 12, rating: 4.8, plate4: "3456", wants_alert: true, home: { gu: "마포구" }, sells, wants: ["주니어 카시트", "루프박스", "아이폰 15"], restore_ok: false, linked: true, urgent: null };
+  const base = () => ({ ok: true, car: true, me: JSON.parse(JSON.stringify(me0)), requests: [], deal: null, urgents: [] });
+  const fresh = () => { const s = base(); s.car = false; Object.assign(s.me, { nick: "이용자 2838", deals: 0, rating: null, plate4: "", home: null, sells: [], wants: [], restore_ok: true, linked: false }); return s; };
+  const reqA = { id: "r1", item: { name: "리안 솔로 유모차", price: 80000 }, buyer: { nick: "길동무88", rating: 4.9, deals: 23, plate4: "7702" }, min: 4 };
+  const dealA = { id: "d1", item: { name: "리안 솔로 유모차", price: 80000 }, place: { name: "망원한강공원 2주차장", lat: 37.5553, lon: 126.8957 }, buyer: { nick: "길동무88", deals: 23, rating: 4.9, plate4: "7702" }, buyer_pos: { lat: 37.5585, lon: 126.9012 }, buyer_eta_min: 6, ask: false };
+  const urgA = { id: "u1", name: "C타입 충전 케이블", desc: "폰 배터리가 3%예요", nick: "하늘색모닝" };
+  let S;
+  MOCK = { api: async (m, path, body) => {
+    if (path === "/phone/state") return { status: 200, j: S };
+    if (path === "/phone/photo") return { status: 200, j: { ok: true, photo: "p9" } };
+    if (path === "/phone/home") return { status: 200, j: { ok: true, gu: "마포구" } };
+    if (path === "/phone/link") return { status: 200, j: { ok: true, name: "리안 솔로 유모차", price: 80000, image: "p4" } };
+    return { status: 200, j: { ok: true, id: "new" } };
+  } };
+  token = "mock";
+  const set = (s) => { S = s; st = s; got = true; };
+  const go = (s, t) => { set(s); if (t) tab = t; for (const v of ["home", "wants", "me"]) $("v-" + v).hidden = v !== tab; showScreen("main"); onState(); };
+  const ask = () => { const s = base(); s.deal = Object.assign({}, dealA, { ask: true, buyer_pos: null, buyer_eta_min: null }); return s; };
+  if (name.startsWith("dark_")) { document.documentElement.dataset.theme = "dark"; name = name.slice(5); }
+  else document.documentElement.dataset.theme = "light";
+  seen = { r1: Date.now() - 70000 }; saveSeen();
+  autoSeen.add("r1"); prevReqs = [];
+  const notifyBridge = () => { window.RoadMarketApp = { askNotify() {}, notifyOn() { return false; } }; };
+  switch (name) {
+    case "start": token = ""; drawStart(); showScreen("start"); loginOptions(); break;
+    case "start_err": token = ""; loginErr = true; drawStart(); showScreen("start"); loginOptions(); break;
+    case "onboard1": set(fresh()); onState(); break;
+    case "onboard2": set(fresh()); onState(); drawOnboard(2); break;
+    case "home_empty": save("rm_onboard", "1"); notifyBridge(); go(fresh()); break;
+    case "home": case "home_items": case "items": go(base()); break;
+    case "home_request": { const s = base(); s.requests = [reqA]; go(s); break; }
+    case "home_deal": { const s = base(); s.deal = dealA; go(s); break; }
+    case "home_ask": go(ask()); break;
+    case "home_urgent": { const s = base(); s.urgents = [urgA]; go(s); break; }
+    case "home_nocar": { const s = base(); s.car = false; s.me.plate4 = ""; go(s); break; }
+    case "offline": go(base()); fails = 1; onFail(); break;
+    case "fatal": set(base()); got = false; onFail(); break;
+    case "item": go(base()); openItem("s3"); break;
+    case "confirm": go(base()); openItem("s3"); removeItem(sells[3], layers[0]); break;
+    case "sell1": go(base()); openSell(); break;
+    case "sell2": { go(base()); const L = openSell(); const a = L.api; a.name.value = "리안 솔로 유모차"; a.name.oninput(); a.nAuto.hidden = false; a.price.value = "80000"; a.price.oninput(); a.pAuto.hidden = false;
+      a.desc.value = "바퀴 상태 좋아요"; a.desc.oninput(); a.S.photoId = "p4"; a.paintPhoto(); a.showHelperMsg(note("ok", "checkc", "가져왔어요. 확인하고 올려 주세요", "")); a.paintWhy(); break; }
+    case "sell2_err": { const s = base(); s.me.home = null; go(s); const L = openSell(); const a = L.api; a.price.value = "0"; a.price.oninput(); a.S.loc = "home"; a.paintLoc();
+      a.homeIn.value = "서교동"; setErr(a.homeErr, T.noHome); a.homeIn.classList.add("bad");
+      setErr(a.nErr, T.needName); a.name.classList.add("bad"); setErr(a.pErr, T.zeroPrice); a.price.classList.add("bad");
+      a.showHelperMsg(note("bad", "alert", T.linkHost, "")); break; }
+    case "request": { const s = base(); s.requests = [reqA, Object.assign({}, reqA, { id: "r2" })]; seen.r2 = Date.now(); autoSeen.add("r2"); go(s, "wants"); openRequest("r1"); break; }
+    case "deal": { const s = base(); s.deal = dealA; go(s); openDeal(); break; }
+    case "deal_wait": { const s = base(); s.deal = Object.assign({}, dealA, { place: null, buyer_eta_min: null }); go(s); openDeal(); break; }
+    case "review1": go(ask()); openReview(); break;
+    case "review2": go(ask()); openReview(); setTimeout(() => { const b = document.querySelectorAll(".stars button")[4]; b && b.click(); }, 0); break;
+    case "urgent": { const s = base(); s.urgents = [urgA]; go(s); openUrgent("u1"); break; }
+    case "wants": { const s = base(); s.deal = dealA; go(s, "wants"); break; }
+    case "wants_empty": { const s = base(); s.car = false; s.me.wants = []; go(s, "wants"); break; }
+    case "me": notifyBridge(); go(base(), "me"); break;
+    case "me_nocar": { const s = base(); s.car = false; s.me.plate4 = ""; s.me.home = null; go(s, "me"); break; }
+    case "pair": { const s = base(); s.car = false; go(s); const fm = openPair(); fm.L.api.code.value = "482931"; setErr(fm.L.api.cErr, T.code403); fm.L.api.code.classList.add("bad"); fm.L.api.plate.value = "12가 3456"; break; }
+    case "homeaddr": { const s = base(); s.me.home = null; go(s, "me"); openHomeAddr(); break; }
+    default: go(base());
+  }
+}
+
+// ───────── 시작 ─────────
+(function boot() {
+  const mockName = location.protocol === "file:" ? (new URLSearchParams(location.hash.slice(1)).get("mock") || "") : "";
+  if (mockName) { runMock(mockName); return; }
+  // 카카오 로그인에서 돌아오면 주소의 # 뒤에 토큰(t) 또는 실패(e)가 실려 와요. 읽고 바로 주소에서 지워요
+  const hs = new URLSearchParams(location.hash.slice(1));
+  if (hs.get("t")) save("rm_phone", hs.get("t"));
+  if (hs.get("e")) loginErr = true;
+  if (location.hash) history.replaceState(null, "", location.pathname);
+  token = load("rm_phone");
+  if (token) begin();
+  else { drawStart(); showScreen("start"); loginOptions(); }
+})();
+</script>
+</body>
+</html>

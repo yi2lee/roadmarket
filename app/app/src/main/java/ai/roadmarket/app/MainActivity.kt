@@ -48,6 +48,8 @@ object Ui {
     var opened = false
 
     private val taskScreens = setOf(Screen.NEARBY, Screen.REQUEST, Screen.MEET, Screen.ASK)
+    /** 거래 진행 화면 = 「거래 내역」 탭 안의 진행 중 거래 상세 (H-04) */
+    val dealScreens = setOf(Screen.REQUEST, Screen.MEET, Screen.ASK)
 
     /**
      * 0-5: 로드마켓 안의 화면을 바꿔요. 다른 화면(내비)이 앞이어도 로드마켓 안은 바뀌고, 앞의 화면은 그대로예요.
@@ -56,7 +58,7 @@ object Ui {
      * 하던 일 화면이 새로 뜨면 열린 창을 닫아요 (S-08).
      */
     fun go(s: Screen) {
-        if (s == Screen.HOME) { if (screen in taskScreens) screen = Screen.HOME }
+        if (s == Screen.HOME) { if (screen in dealScreens) screen = Screen.DEALS else if (screen in taskScreens) screen = Screen.HOME }   // H-04: 거래가 끝나면 「거래 내역」 목록에 남아요
         else { screen = s; overlay = null }
         refresh()
     }
@@ -72,7 +74,7 @@ object Ui {
 
 class MainActivity : Activity() {
     private lateinit var root: FrameLayout
-    private lateinit var p: Theme.Palette
+    internal lateinit var p: Theme.Palette
     private var pendingScreen: Screen? = null
     private var shownOverlay: Overlay? = null
     private var overlayView: View? = null
@@ -121,6 +123,7 @@ class MainActivity : Activity() {
         Ui.front = true
         Notes.clearCard()                                  // 앞에 있을 때는 앱 안 카드만 보여요 (위에 뜬 급구·경로 알림은 치워요)
         if (!Ui.opened) { Ui.opened = true; Ui.screen = Screen.HOME; Ui.overlay = null }   // C-01: 처음 열면 홈
+        Market.autoOn()                                    // 거래 알림은 처음에 켜져요. 화면이 앞에 있을 때라 서비스를 시작할 수 있어요 (C-20)
         render()
     }
 
@@ -136,6 +139,7 @@ class MainActivity : Activity() {
     override fun onStop() {
         Ui.front = false
         touching = false
+        Market.showAround(false)
         super.onStop()
     }
 
@@ -164,9 +168,10 @@ class MainActivity : Activity() {
             Screen.REQUEST -> Market.incoming != null
             Screen.MEET -> Market.deal?.let { it.stage != Market.Stage.ASK } == true
             Screen.ASK -> Market.deal?.stage == Market.Stage.ASK
+            Screen.DEAL_PAST -> Deals.opened != null
             else -> true
         }
-        if (!ok) Ui.screen = Screen.HOME
+        if (!ok) Ui.screen = if (Ui.screen in Ui.dealScreens || Ui.screen == Screen.DEAL_PAST) Screen.DEALS else Screen.HOME
         if (Market.meet == null || Market.deal == null || Market.deal?.stage == Market.Stage.ASK) KakaoMap.release()   // 거래가 끝나면 카카오 지도 WebView를 정리해요
         when (val o = Ui.overlay) {
             is Overlay.SellInput, is Overlay.WantInput -> if (!Car.parked) Ui.overlay = null
@@ -191,10 +196,13 @@ class MainActivity : Activity() {
             Screen.HOME -> home()
             Screen.SELLS -> sells()
             Screen.WANTS -> wants()
+            Screen.SETTINGS -> settings()
             Screen.NEARBY -> nearby()
             Screen.REQUEST -> request()
             Screen.MEET -> meet()
             Screen.ASK -> askScreen()
+            Screen.DEALS -> dealsScreen()                                              // H-01 (Deals.kt)
+            Screen.DEAL_PAST -> pastScreen()                                           // H-05 (Deals.kt)
         }
         // 급구·경로 추천 카드는 어느 화면이든 맨 위에 (약속 4·5절 "앱 안 카드")
         val cards = topCards()
@@ -204,6 +212,7 @@ class MainActivity : Activity() {
         framed.setPadding(Theme.SCREEN_PAD, Theme.SCREEN_PAD, Theme.SCREEN_PAD, Theme.SCREEN_PAD)
         main.addView(framed, LinearLayout.LayoutParams(0, MATCH_PARENT, 1f).also { if (narrow) { it.width = MATCH_PARENT; it.height = 0 } })
         shownScreen = Ui.screen
+        root.post { Market.showAround(Ui.front && (Ui.screen == Screen.HOME || Ui.screen == Screen.NEARBY)) }   // 「내 주변」이 앞에 보이는 동안만 주변 전체 목록을 열어요 (그리기가 끝난 뒤에)
         listScroll?.let { sv -> sv.post { sv.scrollTo(0, keepScroll) } }
 
         val keptOverlay = if (Ui.overlay != null && Ui.overlay === shownOverlay) overlayView else null
@@ -219,11 +228,37 @@ class MainActivity : Activity() {
             root.addView(overlayView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         }
         shownOverlay = Ui.overlay
+        snackView?.let { root.addView(it, snackParams()) }                     // 다시 그려도 사라질 때까지 남겨요
+    }
+
+    // ───────── 스낵바 (H-09) ─────────
+    private var snackView: View? = null
+    private var snackToken = 0
+
+    private fun snackParams() = FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+        .also { it.bottomMargin = Theme.SNACK_BOTTOM }
+
+    /** 화면 아래 가운데에 글 한 줄을 잠깐 보여 줘요. 누를 수 없어 다른 조작을 막지 않아요. */
+    internal fun snack(s: String) {
+        snackView?.let { root.removeView(it) }
+        val t = Theme.SNACK
+        val v = text(s, t.type, p.darkText).apply {
+            gravity = Gravity.CENTER
+            maxLines = 1
+            minimumHeight = t.height
+            setPadding(t.padH, t.padV, t.padH, t.padV)
+            background = fill(p.dark, t.radius)
+            isClickable = false; isFocusable = false
+        }
+        snackView = v
+        root.addView(v, snackParams())
+        val token = ++snackToken
+        root.postDelayed({ if (token == snackToken) { snackView?.let { root.removeView(it) }; snackView = null } }, Theme.SNACK_MS)
     }
 
     // ───────── 작은 부품 ─────────
 
-    private fun text(s: String, t: Theme.Type, color: Int): TextView = TextView(this).apply {
+    internal fun text(s: String, t: Theme.Type, color: Int): TextView = TextView(this).apply {
         text = s
         setTextSize(TypedValue.COMPLEX_UNIT_PX, t.size.toFloat())
         lineHeight = t.line
@@ -242,7 +277,7 @@ class MainActivity : Activity() {
         if (stroke > 0) setStroke(stroke, strokeColor)
     }
 
-    private fun pressable(normal: Int, pressed: Int, radius: Int) = StateListDrawable().apply {
+    internal fun pressable(normal: Int, pressed: Int, radius: Int) = StateListDrawable().apply {
         addState(intArrayOf(android.R.attr.state_pressed), fill(pressed, radius))
         addState(intArrayOf(), fill(normal, radius))
     }
@@ -251,7 +286,7 @@ class MainActivity : Activity() {
      * 공식 기본 버튼(ivi_basic_button). strong = 가장 중요한 버튼 → 공식 Secondary(진한 채움),
      * 그 밖의 버튼 → 공식 Primary(옅은 채움). size: 화면·창 버튼 Large, 목록 줄 안 버튼 Medium.
      */
-    private fun button(label: String, strong: Boolean = false, size: Theme.ButtonSize = Theme.BUTTON_LARGE, action: () -> Unit): TextView =
+    internal fun button(label: String, strong: Boolean = false, size: Theme.ButtonSize = Theme.BUTTON_LARGE, action: () -> Unit): TextView =
         text(label, size.type, 0).apply {
             gravity = Gravity.CENTER
             // 좁은 창에서 긴 버튼 이름이 잘리지 않게 두 줄까지. 높이가 고정이라 위아래 여백은 0으로 두고 가운데 정렬해요
@@ -274,14 +309,14 @@ class MainActivity : Activity() {
             setOnClickListener { action() }
         }
 
-    private fun column() = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-    private fun rowOf() = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-    private fun gap(px: Int = Theme.GAP) = View(this).apply { layoutParams = LinearLayout.LayoutParams(px, px) }
-    private fun wrap() = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
-    private fun wide() = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-    private fun grow() = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+    internal fun column() = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    internal fun rowOf() = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    internal fun gap(px: Int = Theme.GAP) = View(this).apply { layoutParams = LinearLayout.LayoutParams(px, px) }
+    internal fun wrap() = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+    internal fun wide() = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+    internal fun grow() = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
 
-    private fun card() = column().apply {
+    internal fun card() = column().apply {
         background = fill(p.surface, Theme.CARD_RADIUS)
         setPadding(Theme.CARD_PAD, Theme.CARD_PAD, Theme.CARD_PAD, Theme.CARD_PAD)
         minimumHeight = Theme.ROW_MIN_HEIGHT
@@ -308,9 +343,10 @@ class MainActivity : Activity() {
     private fun menu(): View {
         val box = LinearLayout(this).apply { orientation = if (narrow) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL }
         if (!narrow) box.setPadding(0, Theme.SCREEN_PAD, 0, 0)
-        for ((label, target) in listOf(Texts.MENU_HOME to Screen.HOME, Texts.MENU_SELLS to Screen.SELLS, Texts.MENU_WANTS to Screen.WANTS)) {
-            // 주변 물건, 거래 요청, 만날 곳, 거래 어땠어요?에서는 「홈」이 밝아요 (요건표 1절)
-            val on = Ui.screen == target || (target == Screen.HOME && Ui.screen != Screen.SELLS && Ui.screen != Screen.WANTS)
+        for ((label, target) in listOf(Texts.MENU_HOME to Screen.HOME, Texts.MENU_SELLS to Screen.SELLS, Texts.MENU_WANTS to Screen.WANTS, Texts.MENU_DEALS to Screen.DEALS, Texts.MENU_SETTINGS to Screen.SETTINGS)) {
+            // 주변 물건에서는 「내 주변」, 거래 요청·만날 곳·거래 어땠어요?·지난 거래에서는 「거래 내역」이 밝아요 (요건표 1절, H-01)
+            val on = Ui.screen == target || (target == Screen.HOME && Ui.screen == Screen.NEARBY) ||
+                (target == Screen.DEALS && (Ui.screen in Ui.dealScreens || Ui.screen == Screen.DEAL_PAST))
             val item = FrameLayout(this).apply {
                 background = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_pressed), android.graphics.drawable.ColorDrawable(p.surface))
@@ -335,7 +371,7 @@ class MainActivity : Activity() {
     // ───────── 공통 틀: 제목, 맨 아래 버튼 (1절, 9-2) ─────────
 
     /** 1절: 화면과 입력 창 맨 위의 이름. */
-    private fun title(s: String) = text(s, Theme.HEADLINE_SMALL, p.text)
+    internal fun title(s: String) = text(s, Theme.HEADLINE_SMALL, p.text)
 
     /** 9-2: 버튼을 가로로 채워 똑같이 나눠요. null 자리는 비워 둬서 다른 버튼 자리가 바뀌지 않아요 (B-21). */
     private fun fullRow(vararg b: View?) = rowOf().apply {
@@ -346,7 +382,7 @@ class MainActivity : Activity() {
     }
 
     /** 화면 틀: 맨 위 제목 + 손으로 넘기는 내용 + 화면 맨 아래 버튼(있으면). */
-    private fun page(head: List<View>, body: View, bar: View? = null): LinearLayout {
+    internal fun page(head: List<View>, body: View, bar: View? = null): LinearLayout {
         val c = column()
         head.forEach { c.addView(it, wide()) }
         c.addView(gap())
@@ -356,14 +392,14 @@ class MainActivity : Activity() {
     }
 
     /** 물건 이름과 가격 한 줄. 이름이 길면 줄을 바꾸고 가격은 오른쪽에 남아요 (0-6). */
-    private fun nameAndPrice(name: String, price: Long, t: Theme.Type = Theme.TITLE_BOLD, color: Int = p.text, priceType: Theme.Type = Theme.TITLE) = rowOf().apply {
+    internal fun nameAndPrice(name: String, price: Long, t: Theme.Type = Theme.TITLE_BOLD, color: Int = p.text, priceType: Theme.Type = Theme.TITLE) = rowOf().apply {
         addView(text(name, t, color), grow())
         addView(gap())
         addView(text(Texts.won(price), priceType, color), wrap())
     }
 
     /** 배지: 옅은 버튼과 같은 채움, 보조 글자 크기. 색으로 뜻을 나누지 않아요. */
-    private fun badge(s: String) = text(s, Theme.BODY_SMALL, p.text).apply {
+    internal fun badge(s: String) = text(s, Theme.BODY_SMALL, p.text).apply {
         background = fill(p.light, Theme.BUTTON_MEDIUM.radius)
         setPadding(Theme.BADGE_PAD_H, Theme.BADGE_PAD_V, Theme.BADGE_PAD_H, Theme.BADGE_PAD_V)
         maxLines = 1
@@ -374,7 +410,7 @@ class MainActivity : Activity() {
         maxLines = lines; ellipsize = android.text.TextUtils.TruncateAt.END
     }
 
-    private fun small(px: Int = Theme.GAP / 3) = gap(px)
+    internal fun small(px: Int = Theme.GAP / 3) = gap(px)
 
     // ───────── 급구·경로 추천 카드 (약속 4·5·8절) ─────────
     private fun topCards(): View? {
@@ -390,11 +426,7 @@ class MainActivity : Activity() {
             k.addView(gap())
             if (Car.parked) k.addView(fullRow(button(Texts.CLOSE) { Market.closeUrgentIn() },
                 button(Texts.URGENT_SELL, true) { Ui.overlay = Overlay.UrgentSell; render() }), wide())
-            else {
-                k.addView(text(Texts.URGENT_SELL_DRIVING, Theme.BODY_LARGE, p.text), wide())
-                k.addView(gap())
-                k.addView(fullRow(button(Texts.CLOSE) { Market.closeUrgentIn() }, null), wide())
-            }
+            else k.addView(fullRow(button(Texts.CLOSE) { Market.closeUrgentIn() }, null), wide())
             c.addView(k, wide())
         }
         if (r != null) {
@@ -408,22 +440,48 @@ class MainActivity : Activity() {
         return c
     }
 
-    /** B-30, S-01: 물건 사진. 받아 둔 사진이 없으면 null이라 자리 자체가 없어요. 누를 수 없어요. */
-    private fun photo(id: String): View? {
-        val b = Photos.get(id) ?: return null
-        return ImageView(this).apply {
+    /**
+     * B-30, S-01: 물건 사진 칸. 사진이 있으면 사진, 사진이 없거나 아직 받는 중이면 같은 크기의 자리 표시(장바구니 그림)예요.
+     * 누를 수 없어요. 모서리는 사진과 같게 각져 있어요.
+     */
+    private fun photo(id: String): View {
+        val b = Photos.get(id)
+        val v = if (b != null) ImageView(this).apply {
             setImageBitmap(b)
             scaleType = ImageView.ScaleType.CENTER_CROP
+        } else photoPlaceholder()
+        return v.apply {
             isClickable = false; isFocusable = false
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             layoutParams = LinearLayout.LayoutParams(Theme.PHOTO_SIZE, Theme.PHOTO_SIZE)
         }
     }
 
-    /** 사진이 있으면 앞에 사진과 간격을 넣어요. */
+    /** 사진 없는 물건의 자리 표시: 옅은 회색 바탕에 조금 진한 회색 선으로 장바구니(몸통·손잡이·바퀴 둘). 대비를 낮게 둬요. */
+    private fun photoPlaceholder(): View = object : View(this) {
+        private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = p.textDisabled                                                     // 임의: 공식 text/quaternary를 그림 선에 빌림
+            style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND
+        }
+        private val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = p.textDisabled }
+        init { setBackgroundColor(p.divider) }                                          // 임의: 공식 divider/secondary를 바탕에 빌림 (줄 바탕보다 한 단계 진함)
+        override fun onDraw(c: Canvas) {
+            val s = minOf(width, height).toFloat()
+            line.strokeWidth = s * 0.045f
+            val path = android.graphics.Path().apply {
+                moveTo(s * 0.20f, s * 0.28f); lineTo(s * 0.29f, s * 0.28f)            // 손잡이
+                lineTo(s * 0.37f, s * 0.62f); lineTo(s * 0.73f, s * 0.62f)            // 몸통 아래
+                lineTo(s * 0.80f, s * 0.38f); lineTo(s * 0.32f, s * 0.38f)            // 몸통 위
+            }
+            c.drawPath(path, line)
+            c.drawCircle(s * 0.42f, s * 0.74f, s * 0.05f, dot)
+            c.drawCircle(s * 0.69f, s * 0.74f, s * 0.05f, dot)
+        }
+    }
+
+    /** 앞에 사진 칸(사진 또는 자리 표시)과 간격을 넣어요. */
     private fun addPhoto(row: LinearLayout, id: String) {
-        val v = photo(id) ?: return
-        row.addView(v, LinearLayout.LayoutParams(Theme.PHOTO_SIZE, Theme.PHOTO_SIZE))
+        row.addView(photo(id), LinearLayout.LayoutParams(Theme.PHOTO_SIZE, Theme.PHOTO_SIZE))
         row.addView(gap())
     }
 
@@ -432,91 +490,65 @@ class MainActivity : Activity() {
         return kotlin.math.ceil(pt.measureText(s)).toInt()
     }
 
-    // ───────── 홈 (C-01, C-03, C-04, C-06, C-08, C-11, C-12, C-21, C-22) ─────────
+    // ───────── 내 주변 (C-01, C-12) ─────────
 
+    /**
+     * C-01: 「내 주변」. 목록(Market.nearby)이 있으면 그 목록 화면이 곧 이 탭이에요 (B-21, B-62).
+     * 목록은 이 탭이 앞에 보일 때 Market.showAround가 열어요. 목록이 없을 때만 여기서 빈 상태 한 줄을 그려요.
+     */
     private fun home(): LinearLayout {
+        if (Market.nearby != null) return nearby()
         val c = column()
-        // 「거래 알림」 줄 전체(글자 포함)가 스위치예요. 스위치가 공식 80x48로 작아져서 줄 높이 96 이상을 누르는 칸으로 써요.
-        val top = rowOf().apply {
-            minimumHeight = Theme.TOUCH_MIN
-            isSoundEffectsEnabled = false
-            setOnClickListener {
-                when {
-                    !Market.tradeOn -> Market.turnOn()                                     // C-04
-                    Market.inProgress -> { Ui.overlay = Overlay.TurnOff; render() }        // C-08
-                    else -> Market.turnOff()                                               // C-06
-                }
+        val empty = when {
+            !Link.reachable -> Texts.SERVER_DOWN                                       // 7-0
+            !Market.tradeOn -> Texts.AROUND_TRADE_OFF                                  // 서버가 꺼진 차에는 주변 물건을 주지 않아요
+            else -> Texts.NEARBY_EMPTY
+        }
+        empty?.let { c.addView(text(it, Theme.TITLE, p.text), wide()) }
+        return page(listOf(title(Texts.MENU_HOME)), c)
+    }
+
+    // ───────── 설정 (C-04, C-06, C-08, C-26) ─────────
+
+    /** 줄 전체(글자 포함)가 스위치예요. 스위치가 공식 80x48로 작아서 줄 높이 96 이상을 누르는 칸으로 써요. */
+    private fun switchRow(label: String, on: Boolean, action: () -> Unit) = rowOf().apply {
+        minimumHeight = Theme.TOUCH_MIN
+        isSoundEffectsEnabled = false
+        setOnClickListener { action() }
+        addView(text(label, Theme.TITLE_BOLD, p.text), grow())
+        addView(text(if (on) Texts.SWITCH_ON else Texts.SWITCH_OFF, Theme.TITLE_BOLD, p.text), wrap())
+        addView(gap())
+        addView(TradeSwitch(this@MainActivity, p, on), LinearLayout.LayoutParams(Theme.SWITCH_WIDTH, Theme.SWITCH_HEIGHT))
+    }
+
+    private fun settings(): LinearLayout {
+        val c = column()
+        c.addView(switchRow(Texts.TRADE, Market.tradeOn) {
+            when {
+                !Market.tradeOn -> Market.turnOn()                                     // C-04
+                Market.inProgress -> { Ui.overlay = Overlay.TurnOff; render() }        // C-08
+                else -> Market.turnOff()                                               // C-06
             }
-        }
-        top.addView(text(Texts.TRADE, Theme.TITLE_BOLD, p.text), grow())
-        top.addView(text(if (Market.tradeOn) Texts.SWITCH_ON else Texts.SWITCH_OFF, Theme.TITLE_BOLD, p.text), wrap())
-        top.addView(gap())
-        top.addView(TradeSwitch(this, p, Market.tradeOn), LinearLayout.LayoutParams(Theme.SWITCH_WIDTH, Theme.SWITCH_HEIGHT))
-        c.addView(top, wide())
+        }, wide())
         c.addView(gap())
-        val status = if (!Link.reachable) Texts.SERVER_DOWN else if (!Market.tradeOn) Texts.STATUS_OFF else if (Market.inProgress) Texts.STATUS_BUSY else Texts.STATUS_ON
-        c.addView(text(status, Theme.BODY_LARGE, p.textSub), wide())
-        Market.justEnded?.let { c.addView(gap()); c.addView(text(Texts.just(it), Theme.BODY_LARGE, p.text), wide()) }               // C-22
-        if (Market.sells.isEmpty() && Market.wants.isEmpty()) { c.addView(gap()); c.addView(text(Texts.HOME_EMPTY, Theme.BODY_LARGE, p.text), wide()) }   // C-21
-        if (Market.tradeOn && Market.serverMode && Market.nearby == null && !Market.inProgress) {           // 직접 여는 주변 물건 목록
-            c.addView(gap()); c.addView(buttons(button(Texts.BROWSE) { Market.openBrowse() }), wide())
-        }
-        c.addView(gap())
-
-        val counts = LinearLayout(this).apply { orientation = if (narrow) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL }
-        val tiles = listOf(Texts.countSells(Market.sells.size), Texts.countWants(Market.wants.size), Texts.countDeals(Market.dealCount))
-        tiles.forEachIndexed { i, s ->
-            if (i > 0) counts.addView(gap())
-            val cut = s.lastIndexOf(' ')
-            val tile = card()
-            tile.addView(text(s.substring(0, cut), Theme.BODY_SMALL, p.textSub))
-            tile.addView(text(s.substring(cut + 1), Theme.TITLE_BOLD, p.text))
-            counts.addView(tile, if (narrow) wide() else grow())
-        }
-        c.addView(counts, wide())
-
-        val d = Market.deal
-        val (label, target) = when {
-            d != null && d.stage == Market.Stage.ASK -> Texts.CARD_ASK to Screen.ASK
-            d != null -> Texts.CARD_MEET to Screen.MEET
-            Market.incoming != null -> Texts.CARD_REQUEST to Screen.REQUEST
-            Market.nearby != null -> Texts.cardNearby(Market.nearby!!.rows.size) to Screen.NEARBY
-            Market.urgentOffers.isNotEmpty() -> Texts.cardUrgentOffers(Market.urgentOffers.size) to Screen.WANTS
-            else -> null to Screen.HOME
-        }
-        if (label != null) {
+        c.addView(switchRow(Texts.GLEO, Market.gleoOn) { Market.gleoOn = !Market.gleoOn }, wide())   // C-26
+        if (Market.serverMode) {                                                       // 찾는 물건 알림: 「찾는 물건」 탭에서 옮겨 왔어요
             c.addView(gap())
-            val card = rowOf().apply {
-                background = pressable(p.dark, p.darkPressed, Theme.CARD_RADIUS)        // C-12: 누르는 것이라 공식 진한 버튼(Secondary) 채움
-                setPadding(Theme.CARD_PAD, Theme.CARD_PAD, Theme.CARD_PAD, Theme.CARD_PAD)
-                minimumHeight = Theme.ROW_MIN_HEIGHT
-                isSoundEffectsEnabled = false
-                setOnClickListener { Ui.screen = target; render() }
-            }
-            card.addView(text(label, Theme.TITLE_BOLD, p.darkText), grow())
-            c.addView(card, wide())
+            c.addView(switchRow(Texts.WANTS_ALERT, Market.wantsAlert) { Market.setWantsAlert(!Market.wantsAlert) }, wide())
         }
-        if (Link.reachable && Link.pair.isNotEmpty()) {                                // C-23: 홈 맨 아래
+        if (Link.reachable && Link.pair.isNotEmpty()) {                                // C-23: 맨 아래
             c.addView(gap())
             c.addView(text(if (Market.linked) Texts.PHONE_LINKED else Texts.pairLine(Link.pair), Theme.BODY_LARGE, p.textSub), wide())
         }
-        return page(listOf(title(Texts.MENU_HOME)), c)
+        return page(listOf(title(Texts.MENU_SETTINGS)), c)
     }
 
     // ───────── 파는 물건 (S-01~S-12) ─────────
 
-    /** S-07, B-07: 달리는 중 안내 두 줄. 첫 줄 작게, 말할 문장 크게. */
-    private fun drivingHint(small: String, big: String) = column().apply {
-        addView(text(small, Theme.BODY_SMALL, p.textSub), wide())
-        addView(gap())
-        addView(text(big, Theme.TITLE, p.text), wide())
-    }
-
     private fun sells(): LinearLayout {
         val c = column()
-        if (Car.parked) c.addView(buttons(button(Texts.SELL_ADD) { Ui.overlay = Overlay.SellInput(); render() }), wide())
-        else c.addView(drivingHint(Texts.SELLS_DRIVING_1, Texts.SELLS_DRIVING_2), wide())
-        c.addView(gap())
+        // S-07: 달리는 중에는 「물건 올리기」 버튼이 보이지 않아요(안내 글 없음)
+        if (Car.parked) { c.addView(buttons(button(Texts.SELL_ADD) { Ui.overlay = Overlay.SellInput(); render() }), wide()); c.addView(gap()) }
         if (Market.sells.isEmpty()) {
             c.addView(text(Texts.SELLS_EMPTY_1, Theme.TITLE, p.text), wide())
             c.addView(gap())
@@ -584,22 +616,40 @@ class MainActivity : Activity() {
 
     private fun wants(): LinearLayout {
         val c = column()
-        val alert = if (Market.serverMode) button(if (Market.wantsAlert) Texts.ALERT_OFF else Texts.ALERT_ON) { Market.setWantsAlert(!Market.wantsAlert) } else null
-        if (Car.parked) c.addView(if (alert != null) buttons(button(Texts.WANT_ADD) { Ui.overlay = Overlay.WantInput; render() }, alert) else buttons(button(Texts.WANT_ADD) { Ui.overlay = Overlay.WantInput; render() }), wide())
-        else {
-            if (alert != null) { c.addView(buttons(alert), wide()); c.addView(gap()) }
-            c.addView(drivingHint(Texts.WANTS_DRIVING_1, Texts.WANTS_DRIVING_2), wide())
-        }
-        if (Market.serverMode && !Market.wantsAlert) { c.addView(gap()); c.addView(text(Texts.ALERT_IS_OFF, Theme.BODY_LARGE, p.text), wide()) }
+        // 찾는 물건 알림 켜고 끄기는 「설정」에만 있어요 (한 화면은 한 가지 일)
+        // B-07: 달리는 중에는 「찾는 물건 넣기」 버튼이 보이지 않아요(안내 글 없음)
+        if (Car.parked) c.addView(buttons(button(Texts.WANT_ADD) { Ui.overlay = Overlay.WantInput; render() }), wide())
+        if (Market.serverMode && !Market.wantsAlert) { if (c.childCount > 0) c.addView(gap()); c.addView(text(Texts.ALERT_IS_OFF, Theme.BODY_LARGE, p.text), wide()) }
         if (Market.serverMode) urgentSection(c)
-        c.addView(gap())
+        if (c.childCount > 0) c.addView(gap())
+        /** B-01: 찾는 물건 카드 한 장. 이름을 크게, 오른쪽 위에 「지우기」(선 상태만, B-07·B-10), 아래에 넣은 때(B-13). */
+        fun wantCard(w: String) = card().apply {
+            addView(rowOf().apply {
+                gravity = Gravity.TOP
+                addView(text(w, Theme.HEADLINE_SMALL, p.text), grow())
+                if (Car.parked) {
+                    addView(gap())
+                    addView(button(Texts.WANT_REMOVE, size = Theme.BUTTON_SMALL) { Ui.overlay = Overlay.RemoveWant(w); render() },
+                        LinearLayout.LayoutParams(WRAP_CONTENT, Theme.BUTTON_SMALL.height))
+                }
+            }, wide())
+            Market.wantAddedAt(w)?.let { at ->                                          // 넣은 때를 모르는 옛 물건은 이 줄이 없어요
+                addView(small())
+                addView(text(Texts.addedAgo(at), Theme.BODY_SMALL, p.textSub), wide())
+            }
+        }
         if (Market.wants.isEmpty()) {
             c.addView(text(Texts.WANTS_EMPTY_1, Theme.TITLE, p.text), wide())
             c.addView(gap())
             c.addView(text(Texts.WANTS_EMPTY_2, Theme.BODY_LARGE, p.textSub), wide())
-        } else for (w in Market.wants) {
-            val right = if (Car.parked) button(Texts.WANT_REMOVE, size = Theme.BUTTON_MEDIUM) { Ui.overlay = Overlay.RemoveWant(w); render() } else null
-            c.addView(itemRow(w, null, right), wide())
+        } else for (pair in Market.wants.chunked(2)) {                                   // B-01: 두 칸 격자. 한 줄의 두 카드는 높이가 같아요
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            pair.forEachIndexed { i, w ->
+                if (i > 0) row.addView(gap())
+                row.addView(wantCard(w), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+            }
+            if (pair.size == 1) { row.addView(gap()); row.addView(View(this), LinearLayout.LayoutParams(0, 0, 1f)) }   // 홀수면 오른쪽 칸을 비워 폭을 맞춰요
+            c.addView(row, wide())
             c.addView(gap())
         }
         return page(listOf(title(Texts.MENU_WANTS)), c)
@@ -607,19 +657,29 @@ class MainActivity : Activity() {
 
     // ───────── 급구 (약속 4절, 8절) ─────────
     private fun urgentSection(c: LinearLayout) {
-        c.addView(gap())
         val mine = Market.myUrgent
         if (mine == null) {
-            if (Car.parked) c.addView(buttons(button(Texts.URGENT_POST) { Ui.overlay = Overlay.UrgentInput; render() }.apply { isEnabled = Market.tradeOn }), wide())
-            else c.addView(drivingHint(Texts.URGENT_DRIVING_1, Texts.URGENT_DRIVING_2), wide())
+            // 달리는 중에는 「급구 올리기」 버튼이 보이지 않아요(안내 글 없음)
+            if (Car.parked) { c.addView(gap()); c.addView(buttons(button(Texts.URGENT_POST) { Ui.overlay = Overlay.UrgentInput; render() }.apply { isEnabled = Market.tradeOn }), wide()) }
             return
         }
-        c.addView(rowOf().apply {
-            addView(text(Texts.urgentMine(mine.name), Theme.TITLE_BOLD, p.text), grow())
+        c.addView(gap())
+        // U-02, U-10: 내 급구는 찾는 물건 격자 위에 따로, 빛이 천천히 도는 카드로 (Glow.kt). 안의 글과 버튼은 예전과 같아요
+        val k = GlowCard(this, p.accent, p.surface)
+        k.addView(rowOf().apply {
+            gravity = Gravity.TOP
+            addView(column().apply {
+                addView(badge(Texts.URGENT_LIVE), wrap())
+                addView(small(Theme.GAP / 2))
+                addView(text(Texts.urgentMine(mine.name), Theme.TITLE_BOLD, p.text), wide())
+                if (mine.desc.isNotEmpty()) { addView(small()); addView(descText(mine.desc, 2, Theme.BODY_LARGE), wide()) }
+            }, grow())
             addView(gap())
             addView(button(Texts.URGENT_CANCEL, size = Theme.BUTTON_MEDIUM) { Market.cancelUrgent() }, LinearLayout.LayoutParams(WRAP_CONTENT, Theme.BUTTON_MEDIUM.height))
         }, wide())
+        c.addView(k, wide())
         if (Market.urgentOffers.isEmpty()) return
+        val c = k                                                                        // 받은 답(U-07)도 같은 카드 안에
         c.addView(gap())
         c.addView(text(Texts.URGENT_OFFERS_TITLE, Theme.BODY_SMALL, p.textSub), wide())
         val btnW = maxOf(Theme.BUTTON_MEDIUM.minWidth, Market.urgentOffers.maxOf { measure(Texts.pick(it.no), Theme.BUTTON_MEDIUM.type) } + 2 * Theme.BUTTON_MEDIUM.padH)
@@ -664,7 +724,8 @@ class MainActivity : Activity() {
         val shown = if (big) nb.rows.take(Config.NEARBY_MAX) else nb.rows
         val nameT = if (big) Theme.HEADLINE_SMALL else Theme.TITLE_BOLD
         val subT = if (big) Theme.BODY_LARGE else Theme.BODY_SMALL
-        if (nb.rows.isEmpty()) list.addView(text(Texts.NEARBY_EMPTY, Theme.TITLE, p.text), wide())
+        val noW = (nb.rows.map { Texts.no(it.no) } + Texts.no(1)).maxOf { measure(it, nameT) }   // 가장 긴 번호에 맞춘 번호 칸 폭
+        if (nb.rows.isEmpty()) list.addView(text(if (Link.reachable) Texts.NEARBY_EMPTY else Texts.SERVER_DOWN, Theme.TITLE, p.text), wide())
         for (r in shown) {
             val ended = r.gone || r.busy || r.state == Market.RowState.REJECTED || r.state == Market.RowState.NO_ANSWER || r.state == Market.RowState.CANCELLED
             val main = if (ended) p.textDim else p.text                               // 끝난 줄은 흐린 글자 (B-21)
@@ -676,9 +737,9 @@ class MainActivity : Activity() {
                 minimumHeight = if (big) Theme.ROW_BIG_MIN_HEIGHT else Theme.ROW_MIN_HEIGHT
             }
             val info = rowOf()
-            addPhoto(info, r.car.photo)                                               // B-30: 줄 왼쪽
-            info.addView(text(Texts.no(r.no), nameT, main), wrap())
+            info.addView(text(Texts.no(r.no), nameT, main), LinearLayout.LayoutParams(noW, WRAP_CONTENT))   // 번호 칸 폭 고정: 줄마다 번호·사진이 세로로 맞아요
             info.addView(gap())
+            addPhoto(info, r.car.photo)                                               // B-30: 번호 다음
             val mid = column()
             mid.addView(nameAndPrice(r.car.item, r.car.price, nameT, main, if (big) Theme.TITLE_BOLD else Theme.TITLE), wide())
             if (r.car.desc.isNotEmpty()) { mid.addView(small()); mid.addView(descText(r.car.desc, if (big) 1 else 2, subT), wide()) }
@@ -703,7 +764,7 @@ class MainActivity : Activity() {
                 Market.RowState.CANCELLED -> Texts.CANCELLED
             }
             val btn: View = if (r.gone || r.busy) View(this) else when (r.state) {
-                Market.RowState.NONE -> button(Texts.SEND, true, Theme.BUTTON_MEDIUM) { Market.send(r.no) }
+                Market.RowState.NONE -> button(Texts.SEND, true, Theme.BUTTON_MEDIUM) { if (Market.dealLive) snack(Texts.DEAL_LIVE_NO_SEND) else Market.send(r.no) }   // H-09
                 Market.RowState.ACCEPTED -> button(Texts.pick(r.no), true, Theme.BUTTON_MEDIUM) { Market.pick(r.no) }
                 else -> View(this)
             }
@@ -719,8 +780,9 @@ class MainActivity : Activity() {
         }
         // B-21, B-40: 왼쪽 「모두 보내기」(안 보낸 줄이 2개 이상일 때만), 오른쪽 「닫기」/「요청 거두기」. 자리는 고정.
         val sendAll = if (!nb.browse && nb.rows.count { Market.canSend(it) } >= 2) button(Texts.SEND_ALL) { Market.sendAll() } else null
-        val right = if (Market.buyerWaiting) button(Texts.WITHDRAW) { Market.withdrawRequests() } else button(Texts.CLOSE) { Market.closeList() }
-        return page(listOf(title(Texts.NEARBY_TITLE)), list, fullRow(sendAll, right))
+        // 「닫기」는 찾는 물건 알림 목록에만 있어요 (닫으면 주변 전체 목록으로 돌아가요). 주변 전체 목록은 돌아갈 앞 화면이 없어 빼요.
+        val right = if (Market.buyerWaiting) button(Texts.WITHDRAW) { Market.withdrawRequests() } else if (!nb.browse) button(Texts.CLOSE) { Market.closeList() } else null
+        return page(listOf(title(Texts.MENU_HOME)), list, if (sendAll == null && right == null) null else fullRow(sendAll, right))
     }
 
     // ───────── 거래 요청 (S-20, S-22, S-23, S-28) ─────────
@@ -752,7 +814,7 @@ class MainActivity : Activity() {
             // S-20: 「거절」 「수락」, 가로를 반씩. 순서는 알림(S-21)과 같아요.
             c.addView(fullRow(button(Texts.REJECT) { Market.rejectRequest() }, button(Texts.ACCEPT, true) { Market.acceptRequest() }), wide())
         }
-        return page(listOf(title(Texts.REQUEST_TITLE)), c)
+        return page(withListButton(listOf(title(Texts.REQUEST_TITLE))), c)
     }
 
     // ───────── 만날 곳 (M-02, M-06, M-07, M-09, M-15) ─────────
@@ -767,7 +829,7 @@ class MainActivity : Activity() {
             c.addView(text(Texts.SAY_NEED_DEST, Theme.BODY_LARGE, p.text), wide())
             c.addView(gap())
             c.addView(text(Texts.destTimeout(Config.DEST_WAIT_MS / 1000), Theme.BODY_LARGE, p.textSub), wide())
-            return page(listOf(title(Texts.MEET_TITLE)), c, fullRow(cancel, button(Texts.NEAR_PLACE_GO, true) { Market.decideWithoutDestination() }))
+            return page(withListButton(listOf(title(Texts.MEET_TITLE))), c, fullRow(cancel, button(Texts.NEAR_PLACE_GO, true) { Market.decideWithoutDestination() }))
         }
         val place = d.place
         if (d.stage == Market.Stage.WAIT_PEER || place == null) {                    // M-21: 내 목적지는 정했고 만날 곳을 기다려요
@@ -779,7 +841,7 @@ class MainActivity : Activity() {
                 c.addView(gap())
                 c.addView(text(Texts.PEER_DECIDING, Theme.BODY_LARGE, p.text), wide())
             }
-            return page(listOf(title(Texts.MEET_TITLE)), c, fullRow(cancel, null))
+            return page(withListButton(listOf(title(Texts.MEET_TITLE))), c, fullRow(cancel, null))
         }
         // M-06: 작은 "만날 곳" + 장소 이름(가장 큰 글자)이 제목 자리예요.
         val head = listOf(text(Texts.MEET_TITLE, Theme.BODY_SMALL, p.textSub), title(place.name))
@@ -826,7 +888,7 @@ class MainActivity : Activity() {
             c.addView(gap())
             c.addView(text(Texts.NAVI_FAIL, Theme.BODY_LARGE, p.text), wide())
         }
-        return page(head, c, fullRow(cancel, button(Texts.MET, true) { Market.finishDeal() }))
+        return page(withListButton(head), c, fullRow(cancel, button(Texts.MET, true) { Market.finishDeal() }))
     }
 
     // ───────── 거래 어땠어요? (M-08~M-12) ─────────
@@ -841,7 +903,7 @@ class MainActivity : Activity() {
         c.addView(fullRow(*(0..5).map { n -> button(n.toString(), d.stars == n, Theme.BUTTON_MEDIUM) { Market.setStars(n) } }.toTypedArray()), wide())
         c.addView(gap())
         c.addView(fullRow(button(Texts.DID, true) { Market.answerDeal(true) }, button(Texts.DID_NOT) { Market.answerDeal(false) }, button(Texts.NOT_YET) { Market.notYet() }), wide())
-        return page(listOf(title(Texts.ASK_TITLE)), c)
+        return page(withListButton(listOf(title(Texts.ASK_TITLE))), c)
     }
 
     // ───────── 창: 입력 창과 확인 창 ─────────

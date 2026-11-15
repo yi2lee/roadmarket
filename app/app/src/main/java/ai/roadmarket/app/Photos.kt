@@ -11,7 +11,7 @@ import java.util.concurrent.Executors
 
 /**
  * 물건 사진 (B-30, C-24, S-01). 서버의 GET /photo/<id>에서 JPEG를 뒤에서 받아 메모리에만 둬요.
- * 받는 동안은 사진 자리 없이 그리고, 받으면 화면을 한 번 다시 그려요.
+ * 받는 동안은 사진 칸에 자리 표시(장바구니 그림)를 그리고, 받으면 화면을 한 번 다시 그려요.
  */
 object Photos {
     private val h = Handler(Looper.getMainLooper())

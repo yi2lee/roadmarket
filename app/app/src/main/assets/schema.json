@@ -50,7 +50,7 @@
       "function": {
         "name": "TRADE_AND_NEARBY",
         "component": "service",
-        "description": "Turns 로드마켓 trade alerts (거래 알림) on or off, reads out nearby items, checks a numbered item, handles urgent wanted posts (급구) and drive course suggestions. action=on for '거래 알림 켜 줘'. action=off for '거래 알림 꺼 줘'. action=list for '주변 물건 알려 줘', '주변 물건 보여줘' (the list of wanted items found nearby). action=browse for '주변에 뭐 있어?', '주변에 뭐 팔아?'. action=ask with keyword for '주변에 카시트 있어?' (keyword='카시트'). action=course for '드라이브 코스 추천해 줘'. action=urgent with name and desc for '급구 올려 줘, 유아용 카시트, 3살용이면 좋겠어' (name='유아용 카시트', desc='3살용이면 좋겠어'). action=urgent_cancel for '급구 내려 줘'. action=urgent_sell with name, desc and price for answering someone's urgent post: '급구에 카시트 2만 원에 판매해 줘', '급구에 나눔할게' (price='나눔'). action=check for '2번 아직 내 주변에 있어?', and also for '아직 내 주변에 있어?' without a number (then leave number empty). Also use this for the user's short follow-up answer to this function's question, such as '2번', an item name or a price. Always call this function for these requests, even when the number is missing; never answer or ask back by yourself. Tell the user the returned message as it is.",
+        "description": "Turns 로드마켓 trade alerts (거래 알림) on or off, reads out nearby items, checks a numbered item, handles urgent wanted posts (급구) and drive course suggestions. action=on for '거래 알림 켜 줘'. action=off for '거래 알림 꺼 줘'. action=list for '주변 물건 알려 줘', '주변 물건 보여줘' (the list of wanted items found nearby). action=browse for '주변에 뭐 있어?', '주변에 뭐 팔아?'. action=ask with keyword for '주변에 카시트 있어?' (keyword='카시트'). action=course for '드라이브 코스 추천해 줘'. action=urgent with name and desc for '급구 올려 줘, 유아용 카시트, 3살용이면 좋겠어' (name='유아용 카시트', desc='3살용이면 좋겠어'). action=urgent_cancel for '급구 내려 줘'. action=urgent_sell with name, desc and price for answering someone's urgent post: '급구에 카시트 2만 원에 판매해 줘', '급구에 나눔할게' (price='나눔'). action=check for '2번 아직 내 주변에 있어?', and also for '아직 내 주변에 있어?' without a number (then leave number empty). action=sell_clear removes all of the user's own items for sale at once, for '내 물건 다 지워 줘', '내가 올린 물건 전부 내려 줘', '파는 물건 다 지워 줘' (not for '급구 내려 줘', which is urgent_cancel). The app asks back '…모두 지울까요?'; send the user's short answer to that question with answer: answer=yes for '응', '네', '지워', answer=no for '아니'. Also use this for the user's short follow-up answer to this function's question, such as '2번', an item name or a price. Always call this function for these requests, even when the number is missing; never answer or ask back by yourself. Tell the user the returned message as it is.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -66,7 +66,8 @@
                 "course",
                 "urgent",
                 "urgent_cancel",
-                "urgent_sell"
+                "urgent_sell",
+                "sell_clear"
               ],
               "description": "What to do. Leave empty if unclear. Never guess."
             },
@@ -89,6 +90,14 @@
             "price": {
               "type": "string",
               "description": "For action=urgent_sell: the price in won as digits only, such as '20000' for '2만 원', or '나눔' if the user wants to give it away for free. Leave empty if not said. Never guess."
+            },
+            "answer": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no"
+              ],
+              "description": "Only for the user's short answer to this function's question '…모두 지울까요?': yes for '응', '네', '지워', no for '아니'. Leave empty otherwise. Never guess."
             }
           }
         }

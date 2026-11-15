@@ -14,6 +14,9 @@ android {
         // 서버 주소는 이 값 하나예요. -PserverUrl=https://… 로 바꿔요.
         val serverUrl = (project.findProperty("serverUrl") as String?) ?: "https://relay-production-68643d09.up.railway.app"
         buildConfigField("String", "SERVER_URL", "\"" + serverUrl.trimEnd('/') + "\"")
+        // /phone 페이지를 앱 안의 assets/phone.html로 내줘요. -PlocalPage=false면 서버 것을 써요.
+        val localPage = (project.findProperty("localPage") as String?)?.toBoolean() ?: true
+        buildConfigField("boolean", "LOCAL_PAGE", localPage.toString())
     }
     buildFeatures { buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }

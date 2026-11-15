@@ -25,29 +25,25 @@ object Texts {
     private fun quotedEulReul(w: String) = "‘$w’" + if (hasBatchim(w)) "을" else "를"
 
     // 메뉴
-    const val MENU_HOME = "홈"
+    const val MENU_HOME = "내 주변"
     const val MENU_SELLS = "파는 물건"
     const val MENU_WANTS = "찾는 물건"
+    const val MENU_DEALS = "거래 내역"
+    const val MENU_SETTINGS = "설정"
 
-    // 홈 (C-01, C-03, C-04, C-08, C-11, C-12)
+    // 설정 (C-04, C-08, C-26) · 내 주변 (C-01, C-12)
     const val TRADE = "거래 알림"
+    const val GLEO = "글레오"
     const val SWITCH_ON = "켜짐"
     const val SWITCH_OFF = "꺼짐"
-    const val STATUS_OFF = "꺼져 있어요. 켜면 달리는 동안 거래를 알려 드려요."
-    const val STATUS_ON = "켜져 있어요. 주변 차를 살피는 중이에요."
-    const val STATUS_BUSY = "켜져 있어요. 진행 중인 거래가 있어요."
+    const val AROUND_TRADE_OFF = "거래 알림이 꺼져 있어요. 「설정」에서 켜면 주변 물건이 보여요."   // 임의
+    const val G_GLEO_OFF = "로드마켓 설정에서 글레오가 꺼져 있어요."                            // C-27
     const val SERVER_DOWN = "서버에 닿지 않아요."                         // 7-0
     const val TRADE_ON_NOTE = "로드마켓 거래 알림 켜짐"
     const val OFF_ASK = "진행 중인 거래가 취소돼요. 끌까요?"
     const val OFF_YES = "끄기"
-    fun countSells(n: Int) = "파는 물건 ${n}개"
-    fun countWants(n: Int) = "찾는 물건 ${n}개"
-    fun countDeals(n: Int) = "내 거래 ${n}번"
     /** C-23: "폰 연결 번호 482 913" (세 자리씩 띄워요) */
     fun pairLine(code: String) = "폰 연결 번호 " + (if (code.length == 6) code.substring(0, 3) + " " + code.substring(3) else code)
-    fun cardNearby(n: Int) = "주변 물건 ${n}개 · 보기"
-    const val HOME_EMPTY = "먼저 파는 물건이나 찾는 물건을 넣어 주세요."      // C-21
-    fun just(reason: String) = "방금: $reason"                              // C-22
     const val JUST_NO_ANSWER = "답하지 않아 요청이 지나갔어요."             // S-24
     const val JUST_NOT_DONE = "거래를 하지 않았어요."                       // M-11
     const val JUST_CANCELLED = "거래를 취소했어요."                         // S-28, B-54, M-15
@@ -65,8 +61,6 @@ object Texts {
     const val SELL_MISSING = "이름과 가격을 넣어 주세요."
     const val PRICE_TOO_HIGH = "가격은 10억 원까지 넣을 수 있어요."
     const val ITEMS_FULL = "50개까지 넣을 수 있어요."              // 파는 물건·찾는 물건 각각 (서버 한도)
-    const val SELLS_DRIVING_1 = "달리는 중에는 말로 올려요."
-    const val SELLS_DRIVING_2 = "“글레오, 로드마켓 앱으로 방향제 만 원에 올려 줘”"
     const val SELL_REMOVE = "내리기"
     fun sellRemoveAsk(name: String) = quotedEulReul(name) + " 내릴까요?"
     const val KEEP = "그대로 두기"
@@ -81,13 +75,10 @@ object Texts {
     const val WANT_SUBMIT = "넣기"
     const val WANT_MISSING = "찾는 물건 이름을 넣어 주세요."
     const val WANT_DUP = "이미 넣은 물건이에요."
-    const val WANTS_DRIVING_1 = "달리는 중에는 말로 넣어요."
-    const val WANTS_DRIVING_2 = "“글레오, 로드마켓 앱으로 주니어 카시트 찾아 줘”"
     const val WANT_REMOVE = "지우기"
     fun wantRemoveAsk(name: String) = quotedEulReul(name) + " 지울까요?"
 
     // 주변 물건 (B-20~B-29, B-40~B-54)
-    const val NEARBY_TITLE = "주변 물건"
     fun no(n: Int) = "${n}번"
     fun minutes(m: Int) = "${m}분 거리"
     const val NOT_NEAR = "주변에 없음"
@@ -219,9 +210,9 @@ object Texts {
     fun homeIs(gu: String) = "집: $gu"
     const val PHONE_ANSWERS = "판매자가 폰으로 답해요."
     const val ALERT_OFF = "알림 끄기"
+    const val WANTS_ALERT = "찾는 물건 알림"
     const val ALERT_ON = "알림 켜기"
     const val ALERT_IS_OFF = "키워드 알림이 꺼져 있어요."
-    const val BROWSE = "주변 물건 보기"
     const val NEARBY_EMPTY = "지금 주변에 물건이 없어요."                     // 임의
     const val G_NOTHING_AROUND = "지금 주변에 물건이 없어요."                 // 임의
     fun noneAround(k: String) = "지금 주변에 ${eeGa(k)} 없어요."
@@ -241,10 +232,6 @@ object Texts {
     const val URGENT_REPLIED = "급구에 판매하겠다고 답했어요."                 // 임의
     fun sayUrgentOffer(nick: String, name: String, p: Long) = if (p == 0L) "${nick}님이 ${eulReul(name)} 나눠 주겠다고 해요." else "${nick}님이 ${eulReul(name)} ${won(p)}에 팔겠다고 해요."
     const val URGENT_OFFERS_TITLE = "급구에 온 답"
-    fun cardUrgentOffers(n: Int) = "급구에 온 답 ${n}개 · 보기"               // 임의
-    const val URGENT_DRIVING_1 = "달리는 중에는 말로 올려요."
-    const val URGENT_DRIVING_2 = "“글레오, 로드마켓 앱으로 급구 올려 줘, 유아용 카시트”"
-    const val URGENT_SELL_DRIVING = "달리는 중에는 말로 답해요. “글레오, 급구에 카시트 2만 원에 판매해 줘”"   // 임의
     const val URGENT_MISSING = "이름을 넣어 주세요."                            // 임의
     const val URGENT_SELL_MISSING = "상품명과 값을 넣어 주세요."                // 임의
     // 경로 추천·드라이브 코스
@@ -267,6 +254,11 @@ object Texts {
     const val G_NO_ROUTE = "지금 답할 길 추천이 없어요."
     const val G_ROUTE_YES = "이 길로 갈게요."
     const val G_ROUTE_NO = "알겠어요."
+    // S-54: 말로 파는 물건 모두 지우기
+    fun gClearAsk(n: Int) = "파는 물건 ${n}개를 모두 지울까요?"
+    fun gCleared(n: Int, kept: Int) = "${n}개를 지웠어요." + (if (kept > 0) " 거래 중인 ${kept}개는 남겼어요." else "")
+    const val G_CLEAR_KEEP = "그대로 둘게요."
+    const val G_NOTHING_TO_CLEAR = "지울 물건이 없어요."
     // 만남·완료 (약속 9절)
     fun myEta(place: String, m: Int) = "$place, ${m}분 뒤 도착"
     fun peerEta(m: Int) = "상대는 ${m}분 뒤 도착해요."
@@ -275,4 +267,40 @@ object Texts {
     const val MAP_ME = "나"
     const val MAP_PEER = "상대"
     const val GIVE_STARS = "상대에게 별점을 주세요"
+
+    // 찾는 물건 카드·급구 카드
+    const val URGENT_LIVE = "실시간 요청 중…"
+    /** 찾는 물건을 넣은 때: 1분 안 "방금", 1시간 안 "n분 전", 오늘 안 "n시간 전", 그보다 전은 "11월 15일" (기준 시간은 모두 임의). */
+    fun addedAgo(at: Long, now: Long = System.currentTimeMillis()): String {
+        val d = (now - at).coerceAtLeast(0L) / 60_000L
+        val c = java.util.Calendar.getInstance().apply { timeInMillis = at }
+        val today = java.util.Calendar.getInstance().apply { timeInMillis = now }
+        val sameDay = c.get(java.util.Calendar.YEAR) == today.get(java.util.Calendar.YEAR) && c.get(java.util.Calendar.DAY_OF_YEAR) == today.get(java.util.Calendar.DAY_OF_YEAR)
+        return when {
+            d < 1 -> "방금"
+            d < 60 -> "${d}분 전"
+            sameDay -> "${d / 60}시간 전"
+            else -> "${c.get(java.util.Calendar.MONTH) + 1}월 ${c.get(java.util.Calendar.DAY_OF_MONTH)}일"
+        }
+    }
+
+    // 거래 내역 탭 (H-01~H-08)
+    const val DEALS_LIVE = "진행 중인 거래"
+    const val DEALS_PAST = "지난 거래"
+    const val DEALS_EMPTY = "아직 거래 내역이 없어요."
+    const val TO_LIST = "목록"
+    const val STAGE_REQUEST = "요청 받음"
+    const val STAGE_PLACE = "만날 곳 정하는 중"
+    const val STAGE_MEETING = "만나러 가는 중"
+    const val STAGE_ASK = "거래 확인 기다림"
+    const val STAGE_CHECK = "확인 필요"                                      // 「아직이에요」로 미룬 거래
+    const val DEAL_LIVE_NO_SEND = "진행 중인 거래가 있어요. 끝난 뒤에 요청할 수 있어요."   // H-09: 스낵바와 글레오 답이 같은 문장
+    fun pastResult(r: String) = when (r) {
+        Deals.DONE -> "거래함"
+        Deals.NOT_DONE -> "안 함"
+        Deals.PEER_CANCELLED -> "상대가 취소함"
+        else -> "취소함"
+    }
+    fun pastLine(nick: String, at: Long) = (if (nick.isNotEmpty()) "$nick · " else "") + addedAgo(at)
+    fun myStars(n: Int?) = if (n == null) "별점을 주지 않았어요" else "내가 준 별점 $n"
 }
