@@ -1,0 +1,131 @@
+{
+  "packageName": "ai.roadmarket.app",
+  "appDescription": "로드마켓 (RoadMarket): a used-goods trading app for drivers. The user puts items up for sale, keeps a wanted list, hears about wanted items carried by nearby cars, and sends or answers deal requests.",
+  "invokeWord": "",
+  "version": "1.0.0",
+  "actionCalls": [
+    {
+      "type": "function",
+      "function": {
+        "name": "ADD_ITEM",
+        "component": "service",
+        "description": "Registers an item in the 로드마켓 app. kind=sell puts the user's own item up for sale at a price, for requests such as '방향제 만 원에 올려 줘', '차량용 방향제 만 원에 올려 줘', '방향제 올려 줘', '집에 있는 캠핑 의자 4만 원에 올려 줘, 두 개 세트야', '로드마켓에 물건 등록해 줘'. kind=want adds an item the user is looking for to the wanted list, for requests such as '주니어 카시트 찾아 줘', '물건 찾아 줘'. Also use this for the user's short follow-up answer to this function's question, such as a price ('만 원') or an item name. Tell the user the returned message as it is.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "sell",
+                "want"
+              ],
+              "description": "sell for '올려 줘', want for '찾아 줘'. Leave empty if unclear. Never guess."
+            },
+            "name": {
+              "type": "string",
+              "description": "The item name exactly as the user said it, in Korean, such as '차량용 방향제'. Leave empty if the user did not say a specific item name (for example only '물건'). Never guess."
+            },
+            "price": {
+              "type": "string",
+              "description": "The price in won as digits only, such as '10000' for '만 원'. Leave empty if the user did not say a price. Never guess."
+            },
+            "desc": {
+              "type": "string",
+              "description": "A short description of the item in Korean, only if the user said one, such as '두 개 세트' for '두 개 세트야' or '등받이 분리돼요'. Leave empty otherwise. Never guess."
+            },
+            "loc": {
+              "type": "string",
+              "enum": [
+                "car",
+                "home"
+              ],
+              "description": "Where the item is: home if the user said it is at home ('집에 있는 캠핑 의자'), car if the user said it is in the car. Leave empty if not said."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "TRADE_AND_NEARBY",
+        "component": "service",
+        "description": "Turns 로드마켓 trade alerts (거래 알림) on or off, reads out nearby items, checks a numbered item, handles urgent wanted posts (급구) and drive course suggestions. action=on for '거래 알림 켜 줘'. action=off for '거래 알림 꺼 줘'. action=list for '주변 물건 알려 줘', '주변 물건 보여줘' (the list of wanted items found nearby). action=browse for '주변에 뭐 있어?', '주변에 뭐 팔아?'. action=ask with keyword for '주변에 카시트 있어?' (keyword='카시트'). action=course for '드라이브 코스 추천해 줘'. action=urgent with name and desc for '급구 올려 줘, 유아용 카시트, 3살용이면 좋겠어' (name='유아용 카시트', desc='3살용이면 좋겠어'). action=urgent_cancel for '급구 내려 줘'. action=urgent_sell with name, desc and price for answering someone's urgent post: '급구에 카시트 2만 원에 판매해 줘', '급구에 나눔할게' (price='나눔'). action=check for '2번 아직 내 주변에 있어?', and also for '아직 내 주변에 있어?' without a number (then leave number empty). Also use this for the user's short follow-up answer to this function's question, such as '2번', an item name or a price. Always call this function for these requests, even when the number is missing; never answer or ask back by yourself. Tell the user the returned message as it is.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "on",
+                "off",
+                "list",
+                "check",
+                "browse",
+                "ask",
+                "course",
+                "urgent",
+                "urgent_cancel",
+                "urgent_sell"
+              ],
+              "description": "What to do. Leave empty if unclear. Never guess."
+            },
+            "number": {
+              "type": "string",
+              "description": "The list number for action=check, such as '2'. Leave empty if the user did not say a number. Never guess."
+            },
+            "keyword": {
+              "type": "string",
+              "description": "For action=ask: the item word the user asked about, in Korean, such as '카시트'. Leave empty otherwise."
+            },
+            "name": {
+              "type": "string",
+              "description": "For action=urgent or urgent_sell: the item name in Korean as the user said it. Leave empty if not said. Never guess."
+            },
+            "desc": {
+              "type": "string",
+              "description": "For action=urgent or urgent_sell: the features or description the user said, in Korean. Leave empty if not said."
+            },
+            "price": {
+              "type": "string",
+              "description": "For action=urgent_sell: the price in won as digits only, such as '20000' for '2만 원', or '나눔' if the user wants to give it away for free. Leave empty if not said. Never guess."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "DEAL_REQUEST",
+        "component": "service",
+        "description": "Handles 로드마켓 deal requests and answers. action=send sends a deal request to numbered nearby items: '1번 보내 줘', '1번 구매 요청 보내 줘', '1번 거래 요청해 줘', '1번이 괜찮아', '1, 2, 3번 다 보내 줘', '보내 줘'. action=choose settles the deal with the one seller the user picks among those who accepted (it does not send a request): '2번만 할게'. action=accept or action=decline answers an incoming deal request: '수락', '거절'. action=cancel cancels the current deal or requests: '거래 취소해 줘'. action=done, action=not_done or action=not_yet answers how the deal went: '거래했어' (done), '거래 안 했어' (not_done), '아직 안 만났어' (not_yet). action=route_yes or action=route_no answers a suggested route or drive course: '이 길로 가자' (route_yes), '괜찮아' (route_no). Also use this for the user's short follow-up answer to this function's question, such as '2번'. Always call this function for these requests, even when the number is missing or does not seem to be on the list; never answer or ask back by yourself, because the app checks the number and returns the right message. Tell the user the returned message as it is.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "send",
+                "choose",
+                "accept",
+                "decline",
+                "cancel",
+                "done",
+                "not_done",
+                "not_yet",
+                "route_yes",
+                "route_no"
+              ],
+              "description": "What to do. Leave empty if unclear. Never guess."
+            },
+            "numbers": {
+              "type": "string",
+              "description": "The list numbers the user said, comma separated, such as '1' or '1,2,3'. Use 'all' only if the user said 다, 모두 or 전부 without any number. Leave empty if the user did not say a number. Never guess."
+            }
+          }
+        }
+      }
+    }
+  ]
+}

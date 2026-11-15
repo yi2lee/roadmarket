@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로드마켓</title>
+<style>
+/* Pleos 공식 값. 폰은 차 값의 0.6배. 낮/밤은 폰 설정을 따라요 */
+:root {
+  --bg: #F7F8FA; --card: #1314170D; --text: #131417; --sub: #131417D6; --dim: #131417A3; --line: #1314171A;
+  --strong: #44464E; --strong-text: #FFFFFF; --field: #FFFFFF;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1D1E21; --card: #FFFFFF0D; --text: #FFFFFF; --sub: #FFFFFFD6; --dim: #FFFFFFA3; --line: #FFFFFF1A;
+          --strong: #E0E1E6; --strong-text: #131417; --field: #FFFFFF0D; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+       padding: 24px 16px; max-width: 480px; margin: 0 auto; }
+h1 { font-size: 29px; line-height: 38px; font-weight: 700; margin: 0 0 14px; }
+h2 { font-size: 22px; line-height: 26px; font-weight: 700; margin: 0; }
+p, label, .msg { font-size: 18px; line-height: 23px; margin: 0; }
+.msg:empty { display: none; }
+.sub { color: var(--sub); font-size: 16px; line-height: 20px; }
+.dim { color: var(--dim); font-size: 16px; line-height: 20px; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+section { display: flex; flex-direction: column; gap: 14px; margin-top: 29px; }
+button { font: inherit; font-size: 22px; line-height: 26px; min-height: 60px; width: 100%;
+         padding: 8px 24px; border: 0; border-radius: 19px; background: var(--card); color: var(--text); cursor: pointer; }
+button.main { background: var(--strong); color: var(--strong-text); }
+button.small { font-size: 18px; line-height: 23px; min-height: 48px; border-radius: 14px; padding: 4px 14px; }
+button:active { filter: brightness(0.8); }
+button:disabled { opacity: 0.4; cursor: default; filter: none; }
+button[aria-pressed=true] { outline: 2px solid var(--text); outline-offset: -2px; }
+input[type=text], textarea { font: inherit; font-size: 22px; width: 100%; padding: 0 16px;
+         border: 1px solid var(--dim); border-radius: 14px; background: var(--field); color: var(--text); }
+input[type=text] { height: 60px; }
+textarea { padding: 14px 16px; line-height: 28px; resize: vertical; }
+.card { background: var(--card); border-radius: 19px; padding: 19px; display: flex; flex-direction: column; gap: 10px; }
+.card .two { display: flex; gap: 10px; }
+.row { display: flex; align-items: center; gap: 14px; background: var(--card); border-radius: 19px; padding: 14px; min-height: 67px; }
+.row img { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; flex: none; }
+.row .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.row .name { font-size: 22px; line-height: 26px; overflow-wrap: anywhere; }
+.row > button { width: 112px; flex: none; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: 14px; line-height: 18px; padding: 3px 10px; border-radius: 10px; background: var(--card); color: var(--text); }
+.item { display: flex; flex-direction: column; gap: 8px; }
+.item > .row { cursor: pointer; }
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 4px 6px; }
+.tools .ask { grid-column: 1 / -1; }
+.line { border-top: 1px solid var(--line); }
+.pick img { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; }
+.locs { display: flex; gap: 10px; }
+[hidden] { display: none !important; }
+.stars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.stars button { padding: 4px 0; }
+.card .two button { padding: 8px 10px; }
+.tag.k { transform: none; margin-bottom: 4px; }
+.map { height: 220px; border-radius: 19px; overflow: hidden; background: var(--card); }
+.map .leaflet-control-attribution { font-size: 11px; }
+.tag { display: inline-block; transform: translate(-50%, -100%); white-space: nowrap; font: 700 14px/18px system-ui, sans-serif;
+       padding: 3px 8px; border-radius: 8px; background: var(--strong); color: var(--strong-text); border: 2px solid var(--bg); }
+</style>
+</head>
+<body>
+
+<div id="start" class="stack" hidden>
+  <h1>로드마켓</h1>
+  <p>달리는 동안 내 차가 가게가 되고, 기다림 없이 지금 길 위에서 사는 중고 거래</p>
+  <button id="kakaoBtn" class="main">카카오로 시작하기</button>
+  <button id="testBtn" hidden>시험용으로 들어가기</button>
+</div>
+
+<div id="home" hidden>
+  <div id="top" class="stack"></div>
+
+  <h1 style="margin-top:14px">로드마켓</h1>
+  <div id="meBox" class="stack" hidden>
+    <p id="meLine" class="sub"></p>
+    <button id="nickOpen" class="small">닉네임 바꾸기</button>
+    <div id="nickForm" class="stack" hidden>
+      <input id="nickIn" type="text" maxlength="12" autocomplete="off" aria-label="닉네임">
+      <button id="nickGo" class="small">바꾸기</button>
+    </div>
+  </div>
+
+  <section>
+    <h2>파는 물건</h2>
+    <div id="sells" class="stack"></div>
+    <button id="openSell">물건 올리기</button>
+    <div id="sellForm" class="card stack" hidden>
+      <label for="sName">이름</label>
+      <input id="sName" type="text" autocomplete="off">
+      <label for="sPrice">가격</label>
+      <input id="sPrice" type="text" inputmode="numeric" autocomplete="off">
+      <label for="sDesc">간단한 설명</label>
+      <textarea id="sDesc" rows="2" maxlength="200" placeholder="간단한 설명"></textarea>
+      <div class="locs">
+        <button id="locCar" class="small" aria-pressed="true">차에 있음</button>
+        <button id="locHome" class="small" aria-pressed="false">집에 있음</button>
+      </div>
+      <div id="homeBox" class="stack" hidden>
+        <p>집 물건을 올리려면 집 위치를 한 번 넣어 주세요. 구 이름까지만 남에게 보여요.</p>
+        <label for="homeIn">집 주소</label>
+        <input id="homeIn" type="text" autocomplete="off">
+        <p id="homeMsg" class="msg"></p>
+        <button id="homeGo" class="small">집 위치 정하기</button>
+      </div>
+      <div class="pick" id="sPick" hidden><img id="sPickImg" alt=""></div>
+      <button id="sPhotoBtn">사진 넣기</button>
+      <button id="sCapBtn">캡처로 채우기</button>
+      <button id="sLinkBtn">링크로 채우기</button>
+      <div id="linkBox" class="stack" hidden>
+        <input id="sLink" type="text" inputmode="url" autocomplete="off" aria-label="주소">
+        <button id="sLinkGo">가져오기</button>
+      </div>
+      <p id="sellMsg" class="msg"></p>
+      <button id="sellBtn" class="main">올리기</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>찾는 물건</h2>
+    <p id="alertOff" class="sub" hidden>키워드 알림이 꺼져 있어요.</p>
+    <div id="wants" class="stack"></div>
+    <button id="openWant">찾는 물건 넣기</button>
+    <div id="wantForm" class="card stack" hidden>
+      <label for="wName">이름</label>
+      <input id="wName" type="text" autocomplete="off">
+      <p id="wantMsg" class="msg"></p>
+      <button id="wantBtn" class="main">넣기</button>
+    </div>
+    <button id="alertBtn" hidden></button>
+  </section>
+
+  <section id="carOff" hidden>
+    <p>차에서 거래하려면 차와 한 번 이어 주세요. 차의 로드마켓 홈에 뜬 폰 연결 번호를 넣어요.</p>
+    <input id="code" type="text" inputmode="numeric" autocomplete="off" maxlength="7" aria-label="번호">
+    <label for="plate">차 번호판 (예: 12가 3456)</label>
+    <input id="plate" type="text" autocomplete="off" maxlength="12">
+    <p class="sub">만날 때 상대가 내 차를 알아보도록 번호판 뒤 네 자리만 보여 줘요.</p>
+    <p id="codeMsg" class="msg"></p>
+    <button id="pairBtn" class="main">차와 잇기</button>
+  </section>
+  <section id="carOn" hidden>
+    <p id="carLine">차와 이어져 있어요.</p>
+    <button id="plateOpen" class="small" hidden>번호판 바꾸기</button>
+    <div id="plateForm" class="stack" hidden>
+      <label for="plateIn">차 번호판 (예: 12가 3456)</label>
+      <input id="plateIn" type="text" autocomplete="off" maxlength="12">
+      <p class="sub">만날 때 상대가 내 차를 알아보도록 번호판 뒤 네 자리만 보여 줘요.</p>
+      <button id="plateGo" class="small">바꾸기</button>
+    </div>
+    <button id="unpairBtn">차 연결 끊기</button>
+  </section>
+
+  <section>
+    <button id="logoutBtn">로그아웃</button>
+  </section>
+</div>
+
+<input id="filePick" type="file" accept="image/*" hidden>
+
+<script>
+"use strict";
+const T = {   // 표의 문구 그대로 (P-02~P-06, 약속 6절)
+  badCode: "번호가 맞지 않아요.",
+  needSell: "이름과 가격을 넣어 주세요.",
+  reading: "글자를 읽는 중이에요.",
+  noRead: "글자를 읽지 못했어요. 직접 넣어 주세요.",
+  needWant: "찾는 물건 이름을 넣어 주세요.",
+  dupWant: "이미 넣은 물건이에요.",
+  linkLoading: "가져오는 중이에요.",
+  linkFail: "가져오지 못했어요. 직접 넣어 주세요.",
+  linkHost: "당근이나 번개장터의 글 주소만 넣을 수 있어요.",
+  noHome: "주소를 찾지 못했어요.",
+  needHome: "집 물건을 올리려면 집 위치를 한 번 넣어 주세요. 구 이름까지만 남에게 보여요.",
+  loc: { car: "차에 있음", home: "집에 있음" },
+  status: { sale: "판매 중", deal: "거래 중", sold: "판매 완료" },
+};
+const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+const $ = (id) => document.getElementById(id);
+let token = "";
+let newPhoto = null;      // 올릴 물건에 붙일 JPEG (Blob)
+let newPhotoId = "";      // 링크로 채울 때 서버가 이미 맡아 둔 사진 id
+let pickFor = null;       // 파일을 고른 뒤 할 일
+let timer = null;
+let st = null;            // 서버가 준 마지막 상태
+let openId = "";          // 관리 버튼이 펼쳐진 물건
+let askId = "";           // "내릴까요?"를 묻는 중인 물건
+let editId = "";          // 고치는 중인 물건 (빈 값이면 새로 올리기)
+let loc = "car";
+let drawn = "";
+let urg = null;           // 급구에 답하는 작은 칸의 값 {id,name,desc,price,free}
+const replied = new Set(); // 답을 보낸 급구
+
+function load(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+function save(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) {} }
+function won(n) { return Number(n) === 0 ? "나눔" : Number(n).toLocaleString("ko-KR") + "원"; }   // 0원은 어디서든 "나눔"
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+function btn(text, cls, fn, off) { const b = el("button", cls, text); b.onclick = (ev) => { ev.stopPropagation(); fn(); }; if (off) b.disabled = true; return b; }
+function who(p) {
+  if (!p) return "";
+  return p.nick + " · 거래 " + (p.deals || 0) + "번 · " + rate(p.rating);
+}
+// 만남·완료 (약속 9절)
+let star = null;          // 고른 별점 0~5 (null = 안 고름)
+let sentReview = false;   // 거래 어땠어요 답을 보냈음
+const LEAF = "https://unpkg.com/leaflet@1.9.4/dist/leaflet";
+let leafletState = "";    // "" 안 불러옴, "loading", "ok", "fail"
+let map = null, mapBox = null, pinPlace = null, pinBuyer = null, lastFit = "";
+function loadLeaflet() {
+  if (leafletState) return;
+  leafletState = "loading";
+  const css = document.createElement("link"); css.rel = "stylesheet"; css.href = LEAF + ".css"; document.head.append(css);
+  const s = document.createElement("script"); s.src = LEAF + ".js";
+  s.onload = () => { leafletState = window.L ? "ok" : "fail"; draw(); };
+  s.onerror = () => { leafletState = "fail"; draw(); };
+  document.head.append(s);
+}
+function plateTail(p) { return p && p.plate4 ? " · 번호 끝 " + p.plate4 : ""; }
+function okPos(p) { return !!p && typeof p.lat === "number" && typeof p.lon === "number"; }
+// 두 점이 거의 같아요(약 50m 안): 경계 맞추기 대신 정한 확대 단계로 가운데에
+function near(p, q) { return Math.abs(p.lat - q.lat) < 0.0005 && Math.abs(p.lon - q.lon) < 0.0005; }
+function rate(r) { const n = typeof r === "number" ? r : (typeof r === "string" && r.trim() !== "" ? Number(r) : NaN); return Number.isFinite(n) ? "별점 " + n.toFixed(1) : "별점 아직 없음"; }
+function tag(text) { return L.divIcon({ className: "", html: '<span class="tag">' + text + "</span>", iconSize: null, iconAnchor: [0, 0] }); }
+function dropMap() {
+  if (map) { try { map.remove(); } catch (e) {} }
+  map = null; mapBox = null; pinPlace = null; pinBuyer = null; lastFit = "";
+  kmap = null; kPlace = null; kBuyer = null;
+}
+// 지도 칸을 돌려줘요. 다시 그릴 때도 같은 칸을 써서 지도를 새로 만들지 않아요
+// 10절: 카카오 지도 먼저, 안 되면(키 없음·3초 안에 안 뜸) Leaflet/OpenStreetMap, 그것도 안 되면 글만
+let kakaoKey = null;      // null = 아직 /phone/login을 안 물어봄, "" = 키 없음
+let kakaoState = "";      // "" 안 불러옴, "asking", "loading", "ok", "fail"
+let kmap = null, kPlace = null, kBuyer = null;
+function loadKakao() {
+  if (kakaoState) return;
+  if (kakaoKey === null) {
+    kakaoState = "asking";
+    fetch("/phone/login").then((r) => r.json()).then((j) => { kakaoKey = (j && typeof j.kakao_js === "string") ? j.kakao_js : ""; })
+      .catch(() => { kakaoKey = ""; }).finally(() => { kakaoState = ""; loadKakao(); draw(); });
+    return;
+  }
+  if (!kakaoKey) { kakaoState = "fail"; return; }
+  kakaoState = "loading";
+  let done = false;
+  const fail = () => { if (done) return; done = true; kakaoState = "fail"; draw(); };
+  const timer = setTimeout(fail, 3000);
+  const s = document.createElement("script");
+  s.src = "https://dapi.kakao.com/v2/maps/sdk.js?appkey=" + encodeURIComponent(kakaoKey) + "&autoload=false";
+  s.onerror = () => { clearTimeout(timer); fail(); };
+  s.onload = () => {
+    try {
+      window.kakao.maps.load(() => { if (done) return; done = true; clearTimeout(timer); kakaoState = "ok"; draw(); });
+    } catch (e) { clearTimeout(timer); fail(); }
+  };
+  document.head.append(s);
+}
+function kakaoFor(d) {
+  const pl = d.place;
+  if (!mapBox) { mapBox = el("div", "map"); mapBox.setAttribute("aria-label", "만날 곳 지도"); }
+  setTimeout(() => {      // 칸이 화면에 붙은 뒤에 그려요
+    try {
+      const K = window.kakao.maps, a = new K.LatLng(pl.lat, pl.lon);
+      if (!kmap) {
+        kmap = new K.Map(mapBox, { center: a, level: 4 });
+        kmap.setDraggable(false); kmap.setZoomable(false);
+      } else kmap.relayout();
+      const ov = (text) => { const e = document.createElement("span"); e.className = "tag k"; e.textContent = text; return e; };
+      if (!kPlace) kPlace = new K.CustomOverlay({ position: a, content: ov("만날 곳"), yAnchor: 1, map: kmap });
+      else kPlace.setPosition(a);
+      const bp = d.buyer_pos;
+      let b = null;
+      if (okPos(bp)) {
+        b = new K.LatLng(bp.lat, bp.lon);
+        if (!kBuyer) kBuyer = new K.CustomOverlay({ position: b, content: ov("구매자"), yAnchor: 1, map: kmap });
+        else kBuyer.setPosition(b);
+      } else if (kBuyer) { kBuyer.setMap(null); kBuyer = null; }
+      // 칸 크기도 열쇠에 넣어요: 칸이 0 크기일 때 맞춘 뒤 그대로 남지 않게
+      const fk = JSON.stringify([pl.lat, pl.lon, b && [bp.lat, bp.lon], mapBox.offsetWidth, mapBox.offsetHeight]);
+      if (fk !== lastFit && mapBox.offsetWidth > 0 && mapBox.offsetHeight > 0) {
+        lastFit = fk;
+        kmap.relayout();
+        if (b && near(pl, bp)) { kmap.setLevel(3); kmap.setCenter(new K.LatLng((pl.lat + bp.lat) / 2, (pl.lon + bp.lon) / 2)); }
+        else if (b) { const bb = new K.LatLngBounds(); bb.extend(a); bb.extend(b); kmap.setBounds(bb, 40, 40, 40, 40); }
+        else kmap.setCenter(a);
+      }
+    } catch (e) { dropMap(); kakaoState = "fail"; draw(); }
+  }, 0);
+  return mapBox;
+}
+function mapFor(d) {
+  const pl = d.place;
+  if (!okPos(pl)) { dropMap(); return null; }
+  loadKakao();
+  if (kakaoState === "ok") return kakaoFor(d);
+  if (kakaoState !== "fail") return null;          // 카카오를 기다리는 동안은 글만 (최대 3초)
+  if (kmap) dropMap();
+  return leafFor(d);
+}
+function leafFor(d) {
+  const pl = d.place;
+  loadLeaflet();
+  if (leafletState !== "ok") return null;
+  try {
+    if (!map) {
+      mapBox = el("div", "map");
+      mapBox.setAttribute("aria-label", "만날 곳 지도");
+      map = L.map(mapBox, { dragging: false, zoomControl: false, scrollWheelZoom: false, touchZoom: false,
+                             doubleClickZoom: false, boxZoom: false, keyboard: false, attributionControl: true });
+      map.attributionControl.setPrefix(false);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+      map.setView([pl.lat, pl.lon], 15);
+    }
+    const a = [pl.lat, pl.lon];
+    if (!pinPlace) pinPlace = L.marker(a, { icon: tag("만날 곳"), keyboard: false, interactive: false }).addTo(map);
+    else pinPlace.setLatLng(a);
+    const bp = d.buyer_pos;
+    if (okPos(bp)) {
+      const b = [bp.lat, bp.lon];
+      if (!pinBuyer) pinBuyer = L.marker(b, { icon: tag("구매자"), keyboard: false, interactive: false }).addTo(map);
+      else pinBuyer.setLatLng(b);
+    } else if (pinBuyer) { pinBuyer.remove(); pinBuyer = null; }
+    const pts = pinBuyer ? [a, pinBuyer.getLatLng()] : [a];
+    // 칸이 화면에 붙고 크기가 생긴 뒤에 맞춰요. 칸 크기도 열쇠에 넣어요
+    setTimeout(() => {
+      if (!map || !mapBox.offsetWidth || !mapBox.offsetHeight) return;
+      const fk = JSON.stringify([pts, mapBox.offsetWidth, mapBox.offsetHeight]);
+      if (fk === lastFit) return;
+      lastFit = fk;
+      map.invalidateSize();
+      if (pts.length > 1 && near(pl, bp)) map.setView([(pl.lat + bp.lat) / 2, (pl.lon + bp.lon) / 2], 17);
+      else if (pts.length > 1) map.fitBounds(pts, { padding: [40, 40], maxZoom: 17 });
+      else map.setView(a, 15);
+    }, 0);
+    return mapBox;
+  } catch (e) { dropMap(); leafletState = "fail"; return null; }
+}
+let closed = new Set(load("rm_closed").split(",").filter(Boolean));   // 닫은 급구
+
+async function api(method, path, body, raw) {
+  const h = { "X-Phone-Token": token };
+  if (!raw && body !== undefined) h["Content-Type"] = "application/json";
+  const r = await fetch(path, { method, headers: h, body: raw ? body : (body === undefined ? undefined : JSON.stringify(body)) });
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  if (r.status === 401 && path !== "/phone/login/test") { leave(); }
+  return { status: r.status, j };
+}
+// 버튼 하나의 명령: 실패(옛 서버의 404 등)는 조용히 넘겨요
+async function cmd(path, body) { try { await api("POST", path, body); } catch (e) {} refresh(); }
+
+function show(which) {
+  $("start").hidden = which !== "start";
+  $("home").hidden = which !== "home";
+  clearInterval(timer);
+  if (which === "home") { refresh(); timer = setInterval(() => { if (!document.hidden) refresh(); }, 3000); }
+}
+
+function leave() { token = ""; save("rm_phone", ""); st = null; drawn = ""; $("code").value = ""; $("codeMsg").textContent = ""; document.title = "로드마켓"; show("start"); loginOptions(); }
+
+async function loginOptions() {
+  try { const r = await fetch("/phone/login"); const j = await r.json(); $("testBtn").hidden = !j.test; } catch (e) {}
+}
+$("kakaoBtn").onclick = () => { location.href = "/phone/login/kakao"; };
+$("testBtn").onclick = async () => {
+  try {
+    const { status, j } = await api("POST", "/phone/login/test", { name: "시험 1" });
+    if (status === 200 && j.token) { token = j.token; save("rm_phone", token); show("home"); }
+  } catch (e) {}
+};
+$("logoutBtn").onclick = async () => { try { await api("POST", "/phone/logout"); } catch (e) {} leave(); };
+
+$("pairBtn").onclick = async () => {
+  const code = $("code").value.replace(/\D/g, "");
+  $("codeMsg").textContent = "";
+  try {
+    const plate = $("plate").value.trim().slice(0, 12);
+    const { status } = await api("POST", "/phone/pair", plate ? { code, plate } : { code });
+    if (status === 200) { $("code").value = ""; $("plate").value = ""; refresh(); return; }
+    if (status === 401) return;
+  } catch (e) {}
+  $("codeMsg").textContent = T.badCode;
+};
+$("unpairBtn").onclick = async () => { try { await api("POST", "/phone/unpair"); } catch (e) {} refresh(); };
+
+async function refresh() {
+  let res;
+  try { res = await api("GET", "/phone/state"); } catch (e) { return; }
+  if (res.status !== 200) return;
+  st = res.j;
+  draw();
+}
+
+// 옛 서버(me 없음)면 지금 쓰던 sells/wants로 그려요
+function mine() {
+  const me = st && st.me;
+  return { me: me || null, sells: (me ? me.sells : st && st.sells) || [], wants: (me ? me.wants : st && st.wants) || [] };
+}
+
+function draw() {
+  if (!st) return;
+  const key = JSON.stringify([st, openId, askId, [...closed], urg && [urg.id, urg.free], [...replied], star, sentReview, leafletState, kakaoState]);
+  if (key === drawn) return;      // 바뀐 게 없으면 다시 그리지 않아요(펼친 줄·입력이 그대로)
+  drawn = key;
+  const { me, sells, wants } = mine();
+  $("carOff").hidden = !!st.car;
+  $("carOn").hidden = !st.car;
+  const p4 = me && me.plate4;
+  $("carLine").textContent = "차와 이어져 있어요." + (p4 ? " 번호 끝 " + p4 : "");
+  $("plateOpen").hidden = !(me && typeof me.plate4 === "string");   // 옛 서버(plate4 없음)에는 숨겨요
+
+  // 위쪽: 요청·정해진 거래·급구
+  const top = $("top");
+  top.replaceChildren();
+  const reqs = st.requests || [];
+  for (const q of reqs) {
+    const c = el("div", "card");
+    c.append(el("h2", "", "요청이 왔어요"));
+    const it = q.item || {};
+    const b = q.buyer || {};
+    c.append(el("p", "", it.name + " " + won(it.price)));
+    c.append(el("p", "sub", (b.nick || "") + " · " + rate(b.rating) +
+                            (q.min !== undefined && q.min !== null ? " · " + q.min + "분 거리" : "") + plateTail(b)));
+    const two = el("div", "two");
+    two.append(btn("수락", "main", () => cmd("/phone/request/answer", { id: q.id, accept: true })),
+               btn("거절", "", () => cmd("/phone/request/answer", { id: q.id, accept: false })));
+    c.append(two);
+    top.append(c);
+  }
+  const d = st.deal;
+  if (!d) { sentReview = false; star = null; dropMap(); }
+  const asking = !!(d && d.ask && !sentReview);
+  if (asking) {   // 완료: 화면 맨 위 (약속 9절)
+    const c = el("div", "card");
+    c.append(el("h2", "", "오늘 거래 어땠어요?"));
+    c.append(el("p", "sub", "상대에게 별점을 주세요"));
+    const stars = el("div", "stars");
+    for (let n = 0; n <= 5; n++) {
+      const b = btn(String(n), "small" + (star === n ? " main" : ""), () => { star = star === n ? null : n; draw(); });
+      b.setAttribute("aria-pressed", star === n ? "true" : "false");
+      b.setAttribute("aria-label", "별점 " + n);
+      stars.append(b);
+    }
+    c.append(stars);
+    const send = (done) => {
+      const body = { done };
+      if (star !== null) body.stars = star;
+      sentReview = true; draw();
+      cmd("/phone/deal/review", body);
+    };
+    const two = el("div", "two");
+    two.append(btn("거래했어요", "main", () => send(true)), btn("거래 못 했어요", "", () => send(false)));
+    c.append(two);
+    top.prepend(c);
+  }
+  if (d) {
+    const c = el("div", "card");
+    const pname = d.place && typeof d.place.name === "string" ? d.place.name.trim() : "";
+    c.append(el("h2", "", pname ? "만날 곳: " + pname : "만날 곳을 정하는 중이에요."));
+    if (pname && typeof d.buyer_eta_min === "number") c.append(el("p", "", "구매자가 " + d.buyer_eta_min + "분 뒤 도착해요."));
+    if (d.item) c.append(el("p", "", d.item.name + " " + won(d.item.price)));
+    if (d.buyer) c.append(el("p", "sub", who(d.buyer) + plateTail(d.buyer)));
+    const box = pname ? mapFor(d) : null;    // 이름이 오기 전에는 지도를 숨겨요
+    if (!pname) dropMap();
+    if (box) c.append(box);
+    c.append(btn("거래 취소", "", () => cmd("/phone/deal/cancel", {})));
+    top.append(c);
+  }
+  for (const u of st.urgents || []) {
+    if (closed.has(u.id)) continue;
+    const c = el("div", "card");
+    c.append(el("h2", "", "급구 · " + u.name));
+    c.append(el("p", "", (u.desc ? u.desc + " · " : "") + (u.nick || "")));
+    const shut = () => { closed.add(u.id); save("rm_closed", [...closed].slice(-50).join(",")); draw(); };
+    if (replied.has(u.id)) { c.append(el("p", "sub", "답을 보냈어요."), btn("닫기", "", shut)); top.append(c); continue; }
+    if (urg && urg.id === u.id) c.append(urgentForm(u));
+    else {
+      const two = el("div", "two");
+      two.append(btn("판매하기", "main", () => { urg = { id: u.id, name: "", desc: "", price: "", free: false }; draw(); }),
+                 btn("닫기", "", shut));
+      c.append(two);
+    }
+    top.append(c);
+  }
+  document.title = "로드마켓" + (reqs.length ? " (요청 " + reqs.length + ")" : "") + (asking ? " (거래 어땠어요?)" : "");
+  if (map) setTimeout(() => { if (map) map.invalidateSize(); }, 0);
+
+  // 닉네임
+  $("meBox").hidden = !me;
+  if (me) $("meLine").textContent = who(me);
+
+  // 파는 물건
+  const box = $("sells");
+  box.replaceChildren();
+  for (const s of sells) {
+    const wrap = el("div", "item");
+    const row = el("div", "row");
+    if (s.photo) { const im = el("img"); im.alt = ""; im.src = "/photo/" + encodeURIComponent(s.photo); row.append(im); }
+    const t = el("div", "txt");
+    t.append(el("div", "name", s.name), el("div", "sub", won(s.price)));
+    if (s.desc) t.append(el("div", "dim clamp", s.desc));
+    const bs = el("div", "badges");
+    bs.append(el("span", "badge", T.loc[s.loc] || T.loc.car));
+    bs.append(el("span", "badge", s.hidden ? "숨김" : (T.status[s.status] || T.status.sale)));
+    t.append(bs);
+    row.append(t);
+    wrap.append(row);
+    if (s.id) {
+      row.onclick = () => { openId = openId === s.id ? "" : s.id; askId = ""; draw(); };
+      if (openId === s.id) wrap.append(tools(s));
+    }
+    box.append(wrap);
+  }
+
+  // 찾는 물건
+  const wb = $("wants");
+  wb.replaceChildren();
+  for (const w of wants) {
+    const row = el("div", "row");
+    const n = el("div", "name", w); n.style.flex = "1";
+    row.append(n, btn("지우기", "small", () => cmd("/phone/want/remove", { name: w })));
+    wb.append(row);
+  }
+  const on = !me || me.wants_alert !== false;
+  $("alertBtn").hidden = !me;
+  $("alertBtn").textContent = on ? "알림 끄기" : "알림 켜기";
+  $("alertOff").hidden = on;
+  homeBox();
+}
+
+// 급구에 답하기: 상품명·간단한 설명·값(또는 나눔) → 보내기
+function urgentForm(u) {
+  const f = el("div", "stack");
+  const inp = (label, k, tag, extra) => {
+    const l = el("label", "", label), i = el(tag || "input");
+    if (!tag) { i.type = "text"; }
+    Object.assign(i, extra || {});
+    i.value = urg[k]; i.oninput = () => { urg[k] = i.value; };
+    f.append(l, i); return i;
+  };
+  inp("상품명", "name", null, { autocomplete: "off" });
+  inp("간단한 설명", "desc", "textarea", { rows: 2, maxLength: 200 });
+  const pr = inp("값", "price", null, { inputMode: "numeric", autocomplete: "off" });
+  pr.disabled = urg.free;
+  const free = btn("나눔", "small", () => { urg.free = !urg.free; draw(); });
+  free.setAttribute("aria-pressed", urg.free);
+  const msg = el("p", "msg");
+  f.append(free, msg, btn("보내기", "main", async () => {
+    const name = urg.name.trim(), price = urg.free ? 0 : parseInt(String(urg.price).replace(/\D/g, ""), 10);
+    if (!name || !(price >= 0)) { msg.textContent = T.needSell; return; }
+    let r;
+    try { r = await api("POST", "/phone/urgent/reply", { id: u.id, name, desc: urg.desc.trim().slice(0, 200), price }); } catch (e) { return; }
+    if (r.status !== 200) return;      // 옛 서버(404)는 조용히
+    replied.add(u.id); urg = null; refresh(); draw();
+  }));
+  return f;
+}
+
+// 줄 아래에 펼쳐지는 관리 버튼
+function tools(s) {
+  const box = el("div", "tools");
+  const busy = s.status === "deal";
+  if (askId === s.id) {
+    box.append(el("p", "ask", "‘" + s.name + "’" + (function (w) { const c = w.trim().slice(-1); const k = c.charCodeAt(0); if (k >= 0xAC00 && k <= 0xD7A3) return (k - 0xAC00) % 28 ? "을" : "를"; if (/[0-9]/.test(c)) return "013678".includes(c) ? "을" : "를"; return /[lmnrLMNR]$/.test(c) ? "을" : "를"; })(s.name) + " 내릴까요?"));
+    box.append(btn("내리기", "small", () => { askId = ""; openId = ""; cmd("/phone/sell/remove", { id: s.id }); }),
+               btn("취소", "small", () => { askId = ""; draw(); }));
+    return box;
+  }
+  box.append(btn("수정", "small", () => startEdit(s), busy));
+  box.append(btn("사진 넣기", "small", () => choose(async (file) => {
+    try { const jpg = await shrink(file); await api("POST", "/phone/photo?item=" + encodeURIComponent(s.id), jpg, true); } catch (e) {}
+    refresh();
+  })));
+  box.append(btn(s.hidden ? "다시 보이기" : "숨기기", "small", () => cmd("/phone/sell/hide", { id: s.id, hidden: !s.hidden })));
+  box.append(btn(s.status === "sold" ? "다시 판매 중으로" : "판매 완료로", "small",
+    () => cmd("/phone/sell/status", { id: s.id, status: s.status === "sold" ? "sale" : "sold" })));
+  box.append(btn("내리기", "small", () => { askId = s.id; draw(); }, busy));
+  return box;
+}
+
+// 사진 고르기 (고르거나 찍기)
+function choose(fn) { pickFor = fn; $("filePick").value = ""; $("filePick").click(); }
+$("filePick").onchange = () => { const f = $("filePick").files[0]; if (f && pickFor) pickFor(f); };
+
+// 긴 쪽 1280으로 줄여 JPEG로
+async function shrink(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
+    const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    for (const q of [0.85, 0.7, 0.5]) {
+      const b = await new Promise((ok) => c.toBlob(ok, "image/jpeg", q));
+      if (b && b.size <= 2 * 1024 * 1024) return b;
+    }
+    throw new Error("big");
+  } finally { URL.revokeObjectURL(url); }
+}
+
+function setNewPhoto(blob) {
+  newPhoto = blob;
+  newPhotoId = "";
+  $("sPick").hidden = !blob;
+  if (blob) $("sPickImg").src = URL.createObjectURL(blob);
+}
+function setPhotoId(id) {
+  newPhoto = null;
+  newPhotoId = id || "";
+  $("sPick").hidden = !newPhotoId;
+  if (newPhotoId) $("sPickImg").src = "/photo/" + encodeURIComponent(newPhotoId);
+}
+
+// 위치 고르기. 집인데 집 위치가 없으면 그 자리에서 먼저 넣어요
+function setLoc(v) {
+  loc = v;
+  $("locCar").setAttribute("aria-pressed", v === "car");
+  $("locHome").setAttribute("aria-pressed", v === "home");
+  homeBox();
+}
+function needHome() { const me = st && st.me; return loc === "home" && !!me && !me.home; }
+function homeBox() { $("homeBox").hidden = !needHome(); }
+$("locCar").onclick = () => setLoc("car");
+$("locHome").onclick = () => setLoc("home");
+$("homeGo").onclick = async () => {
+  const query = $("homeIn").value.trim();
+  $("homeMsg").textContent = "";
+  if (!query) { $("homeMsg").textContent = T.noHome; return; }
+  let r;
+  try { r = await api("POST", "/phone/home", { query }); } catch (e) { $("homeMsg").textContent = T.noHome; return; }
+  if (r.status === 401) return;
+  if (r.status !== 200 || !r.j.ok) { $("homeMsg").textContent = T.noHome; return; }
+  if (st && st.me) st.me.home = { gu: r.j.gu };
+  $("homeIn").value = "";
+  homeBox();
+  refresh();
+};
+
+function resetForm() {
+  editId = "";
+  $("sName").value = ""; $("sPrice").value = ""; $("sDesc").value = "";
+  setNewPhoto(null); setLoc("car");
+  $("sellMsg").textContent = ""; $("homeMsg").textContent = "";
+  $("sellBtn").textContent = "올리기";
+}
+function startEdit(s) {
+  resetForm();
+  editId = s.id;
+  $("sName").value = s.name; $("sPrice").value = String(s.price); $("sDesc").value = s.desc || "";
+  setLoc(s.loc === "home" ? "home" : "car");
+  $("sellBtn").textContent = "고치기";
+  $("sellForm").hidden = false;
+  $("sellForm").scrollIntoView({ block: "start" });
+}
+
+// P-03 물건 올리기 / 수정
+$("openSell").onclick = () => { const was = $("sellForm").hidden; resetForm(); $("sellForm").hidden = !was; };
+$("sPhotoBtn").onclick = () => choose(async (f) => { try { setNewPhoto(await shrink(f)); } catch (e) {} });
+$("sellBtn").onclick = async () => {
+  const name = $("sName").value.trim();
+  const price = parseInt($("sPrice").value.replace(/\D/g, ""), 10);
+  const desc = $("sDesc").value.trim().slice(0, 200);
+  $("sellMsg").textContent = "";
+  if (!name || !(price >= 1)) { $("sellMsg").textContent = T.needSell; return; }
+  if (needHome()) { $("sellMsg").textContent = T.needHome; $("homeIn").focus(); return; }
+  try {
+    if (editId) {
+      const r = await api("POST", "/phone/sell/update", { id: editId, name, price, desc, loc });
+      if (r.status !== 200) return;
+      if (newPhoto) await api("POST", "/phone/photo?item=" + encodeURIComponent(editId), newPhoto, true);
+    } else {
+      let photo = newPhotoId;
+      if (newPhoto) {
+        const r = await api("POST", "/phone/photo", newPhoto, true);
+        if (r.status !== 200) return;
+        photo = r.j.photo;
+      }
+      const r = await api("POST", "/phone/sell", { name, price, photo, desc, loc });
+      if (r.status === 400 && r.j.why === "empty") { $("sellMsg").textContent = T.needSell; return; }
+      if (r.status !== 200) return;
+    }
+  } catch (e) { return; }
+  resetForm();
+  $("sellForm").hidden = true;
+  refresh();
+};
+
+// P-05 캡처로 채우기: 글자는 폰 안에서 읽어요. 서버로 보내지 않아요
+let tessLoading = null;
+function tess() {
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  if (!tessLoading) tessLoading = new Promise((ok, bad) => {
+    const s = document.createElement("script");
+    s.src = TESS; s.onload = () => ok(window.Tesseract); s.onerror = (e) => { tessLoading = null; bad(e); };
+    document.head.append(s);
+  });
+  return tessLoading;
+}
+
+function findPrice(line) {
+  const t = line.replace(/\s/g, "");
+  let m = t.match(/(\d+(?:[.,]\d+)?)?만(\d{1,4})?원/);           // 1.2만원, 3만 원, 만 원
+  if (m) {
+    const a = m[1] ? parseFloat(m[1].replace(",", ".")) : 1;
+    const v = Math.round(a * 10000) + (m[2] ? parseInt(m[2], 10) : 0);
+    if (v > 0) return v;
+  }
+  m = t.match(/(\d{1,3}(?:[,.]\d{3})+|\d+)원/);                    // 12,000원
+  if (m) { const v = parseInt(m[1].replace(/[,.]/g, ""), 10); if (v > 0) return v; }
+  return null;
+}
+
+const NOT_TITLE = /매너\s*온도|에서\s*보기|[가-힣]+(시|도)\s+[가-힣]+(구|군|시)\s+[가-힣]+(동|읍|면|가)|(분|시간|일|주|달)\s*전|채팅|관심|조회|끌올|팔로|판매중|예약중|거래완료|나눔|가격\s*제안|제안\s*불가|안전\s*결제|배송비|택배|번개페이|신고|공유|km|\d+\s*m\b|^[^\p{L}\p{N}]*$/u;
+function tidy(line) {
+  let s = line.replace(/\s+/g, " ").trim();
+  const parts = s.split(" ");
+  if (parts.length >= 3 && parts.filter((p) => p.length === 1).length / parts.length >= 0.6) s = parts.join("");  // 한 글자씩 띄어 읽은 줄
+  return s.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N})]+$/gu, "").slice(0, 60);
+}
+function parseCapture(text) {
+  const lines = text.split(/\n/).map(tidy).filter(Boolean);
+  let pi = -1, price = null;
+  for (let i = 0; i < lines.length; i++) { const p = findPrice(lines[i]); if (p !== null && p >= 100) { pi = i; price = p; break; } }
+  if (pi < 0) return { name: "", price: null };
+  let best = null, bestScore = -1e9;
+  for (let i = Math.max(0, pi - 4); i <= Math.min(lines.length - 1, pi + 3); i++) {
+    if (i === pi) continue;
+    const s = lines[i];
+    const han = (s.match(/[가-힣]/g) || []).length;
+    if (han < 2 || s.length < 2 || findPrice(s) !== null || NOT_TITLE.test(s)) continue;
+    const dist = i < pi ? pi - i : (i - pi) * 1.5;       // 위쪽 줄을 조금 더 쳐줘요
+    const score = (han / s.length) * 10 + Math.min(s.length, 20) - dist;
+    if (score > bestScore) { bestScore = score; best = s; }
+  }
+  return { name: best || "", price };
+}
+
+$("sCapBtn").onclick = () => choose(async (file) => {
+  $("sellMsg").textContent = T.reading;
+  let got = { name: "", price: null };
+  try {
+    setNewPhoto(await shrink(file));                   // 캡처 그림을 사진으로 넣어요
+    const Tesseract = await tess();
+    const r = await Tesseract.recognize(file, "kor");
+    got = parseCapture((r && r.data && r.data.text) || "");
+  } catch (e) {}
+  if (!got.name && got.price === null) {
+    $("sName").value = ""; $("sPrice").value = "";
+    $("sellMsg").textContent = T.noRead;
+    return;
+  }
+  $("sName").value = got.name;
+  $("sPrice").value = got.price === null ? "" : String(got.price);
+  $("sellMsg").textContent = "";
+});
+
+// 링크로 채우기: 당근·번개장터 글 주소에서 이름·가격·사진(·설명)을 가져와요. 채운 뒤 고쳐서 올려요
+$("sLinkBtn").onclick = () => { $("linkBox").hidden = !$("linkBox").hidden; };
+$("sLinkGo").onclick = async () => {
+  const url = $("sLink").value.trim();
+  $("sellMsg").textContent = T.linkLoading;
+  let r;
+  try { r = await api("POST", "/phone/link", { url }); } catch (e) { $("sellMsg").textContent = T.linkFail; return; }
+  if (r.status === 401) return;
+  if (r.status === 400 && r.j.why === "host") { $("sellMsg").textContent = T.linkHost; return; }
+  const j = r.j || {};
+  if (r.status !== 200 || (!j.name && (j.price === null || j.price === undefined) && !j.image)) {
+    $("sellMsg").textContent = T.linkFail; return;
+  }
+  $("sName").value = j.name || "";
+  $("sPrice").value = (j.price === null || j.price === undefined) ? "" : String(j.price);
+  $("sDesc").value = (j.desc || "").slice(0, 200);
+  if (j.image) setPhotoId(j.image);
+  $("sellMsg").textContent = (j.name && j.price !== null && j.price !== undefined) ? "" : T.linkFail;
+  $("sLink").value = ""; $("linkBox").hidden = true;
+};
+
+// P-06 찾는 물건 넣기 / 알림 끄기
+$("openWant").onclick = () => { $("wantForm").hidden = !$("wantForm").hidden; };
+$("wantBtn").onclick = async () => {
+  const name = $("wName").value.trim();
+  $("wantMsg").textContent = "";
+  if (!name) { $("wantMsg").textContent = T.needWant; return; }
+  let r;
+  try { r = await api("POST", "/phone/want", { name }); } catch (e) { return; }
+  if (r.status === 409 && r.j.why === "dup") { $("wantMsg").textContent = T.dupWant; return; }
+  if (r.status === 400 && r.j.why === "empty") { $("wantMsg").textContent = T.needWant; return; }
+  if (r.status !== 200) return;
+  $("wName").value = "";
+  $("wantForm").hidden = true;
+  refresh();
+};
+$("alertBtn").onclick = () => { const me = st && st.me; cmd("/phone/wants_alert", { on: !(me && me.wants_alert !== false) }); };
+
+// 닉네임 바꾸기 (12자)
+$("plateOpen").onclick = () => { $("plateForm").hidden = !$("plateForm").hidden; $("plateIn").value = ""; };
+$("plateGo").onclick = async () => {
+  const plate = $("plateIn").value.trim().slice(0, 12);
+  try { await api("POST", "/phone/plate", { plate }); } catch (e) {}
+  $("plateForm").hidden = true; refresh();
+};
+$("nickOpen").onclick = () => {
+  $("nickForm").hidden = !$("nickForm").hidden;
+  if (!$("nickForm").hidden) $("nickIn").value = (st && st.me && st.me.nick) || "";
+};
+$("nickGo").onclick = async () => {
+  const nick = $("nickIn").value.trim().slice(0, 12);
+  if (!nick) return;
+  $("nickForm").hidden = true;
+  cmd("/phone/nick", { nick });
+};
+
+// 카카오 로그인에서 돌아오면 주소의 # 뒤에 토큰(t) 또는 실패(e)가 실려 와요. 읽고 바로 주소에서 지워요
+(function fromHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("t")) save("rm_phone", h.get("t"));
+  if (location.hash) history.replaceState(null, "", location.pathname);
+})();
+token = load("rm_phone");
+show(token ? "home" : "start");
+if (!token) loginOptions();
+</script>
+</body>
+</html>

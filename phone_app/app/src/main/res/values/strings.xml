@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">로드마켓</string>
+    <string name="offline">인터넷 연결을 확인해 주세요</string>
+    <string name="retry">다시 시도</string>
+    <string name="pick_photo">사진 고르기</string>
+
+    <!-- 알림 -->
+    <string name="ch_wait">요청 기다리기</string>
+    <string name="ch_event">요청·거래 소식</string>
+    <string name="watch_text">로드마켓이 요청을 기다리고 있어요</string>
+    <string name="n_request_title">집 물건에 요청이 왔어요</string>
+    <string name="n_deal_title">오늘 거래 어땠어요?</string>
+    <string name="n_deal_text">%1$s 거래에 별점을 남겨 주세요</string>
+    <!-- 급구 카드 제목과 같아요 (server/phone.html의 "급구 · " + 이름). -->
+    <string name="n_urgent_title">급구 · %1$s</string>
+</resources>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="pleos.car.permission.TTS_SERVICE" />
+    <uses-permission android:name="pleos.car.permission.CAR_DOORS" />
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <application
+        android:name=".App"
+        android:label="@string/app_name"
+        android:icon="@drawable/ic_app"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="true"
+        android:theme="@style/AppTheme">
+        <!-- 화면은 하나뿐이에요. 주행 중 표시 값은 작업(task) 단위로 읽혀요. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|density"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <meta-data android:name="distractionOptimized" android:value="true" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- 거래가 켜진 동안 떠 있는 서비스 -->
+        <service android:name=".TradeService" android:exported="false" android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="nearby_trade_alerts" />
+        </service>
+        <!-- 글레오가 보내는 방송 (패키지 이름 + 함수 이름) -->
+        <receiver android:name=".GleoReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="ai.roadmarket.app.ADD_ITEM" />
+                <action android:name="ai.roadmarket.app.TRADE_AND_NEARBY" />
+                <action android:name="ai.roadmarket.app.DEAL_REQUEST" />
+            </intent-filter>
+        </receiver>
+        <!-- 알림의 수락·거절 버튼 -->
+        <receiver android:name=".NoteReceiver" android:exported="false" />
+        <!-- 데모용 장치 (demo.sh가 부름) -->
+        <receiver android:name=".DemoReceiver" android:exported="true" />
+    </application>
+</manifest>

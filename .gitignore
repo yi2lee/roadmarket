@@ -1,0 +1,23 @@
+# 빌드 결과물
+build/
+.gradle/
+.kotlin/
+.idea/
+*.apk
+*.aab
+
+# 이 컴퓨터에만 있는 설정
+local.properties
+.DS_Store
+
+# 비밀 값과 시험 자료 (키는 환경 변수로 넣어요)
+.env
+.env.*
+data/
+*.keystore
+*.jks
+
+# 실행 기록
+*.log
+*.pid
+__pycache__/

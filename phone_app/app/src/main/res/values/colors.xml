@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 페이지 바탕색과 같게 맞춰요 (phone.html의 bg, text). -->
+    <color name="page_bg">#F7F8FA</color>
+    <color name="page_text">#131417</color>
+    <color name="button_bg">#131417</color>
+    <color name="button_text">#FFFFFF</color>
+    <color name="icon_bg">#131417</color>
+</resources>

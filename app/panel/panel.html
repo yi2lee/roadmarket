@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>로드마켓 조작판</title>
+<style>
+:root{--bg:#F4F5F7;--card:#fff;--tx:#1D1E21;--sub:#5B5E66;--btn:#E3E5EA;--on:#3B6DF0;--onx:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#1D1E21;--card:#313236;--tx:#fff;--sub:#C7C9CE;--btn:#44464E;--on:#6E94FF;--onx:#1D1E21}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:18px/1.5 -apple-system,"Apple SD Gothic Neo",sans-serif;padding:16px 16px 80px;max-width:480px;margin:0 auto}
+h2{font-size:20px;margin:0 0 4px}
+section{background:var(--card);border-radius:16px;padding:16px;margin:0 0 16px}
+p.d{color:var(--sub);font-size:15px;margin:4px 0 12px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:var(--tx);background:var(--btn);border:0;border-radius:12px;padding:12px 14px;min-height:52px;cursor:pointer;flex:1 1 auto;text-align:center}
+button.pressed{background:var(--on);color:var(--onx)}
+button.sel{background:var(--on);color:var(--onx);font-weight:700}
+button.q{font-size:15px;min-height:44px;text-align:left}
+textarea{width:100%;font:inherit;border-radius:12px;border:2px solid var(--btn);background:var(--bg);color:var(--tx);padding:10px;min-height:72px;margin-bottom:8px}
+.col{display:flex;flex-direction:column;gap:8px}
+#spoken{white-space:pre-wrap;background:var(--bg);border-radius:12px;padding:12px;margin-top:8px;min-height:52px;font-size:16px}
+#status{position:fixed;left:0;right:0;bottom:0;background:var(--card);padding:14px 16px;border-top:2px solid var(--btn);font-size:16px}
+#status.bad{color:#E5484D}
+.n{display:flex;gap:8px;align-items:center;margin-bottom:8px}.n span{color:var(--sub);font-size:15px}
+</style>
+</head>
+<body>
+<section>
+  <h2>차 고르기</h2>
+  <div class="row" id="cars">
+    <button data-car="A" class="sel">A (파는 차)</button>
+    <button data-car="B">B (사는 차)</button>
+  </div>
+</section>
+
+<section>
+  <h2>차 움직이기</h2>
+  <div class="col">
+    <button data-cmd="gear" data-arg="P">기어 P (세움)</button>
+    <button data-cmd="gear" data-arg="D">기어 D (달림)</button>
+    <button data-cmd="door">운전석 문 한 번 여닫기</button>
+  </div>
+  <p class="d">두 번 누르면 "내렸다가 다시 탐"이에요.</p>
+</section>
+
+<section>
+  <h2>화면</h2>
+  <div class="row">
+    <button data-cmd="open">로드마켓 열기</button>
+    <button data-cmd="navi">내비 열기</button>
+    <button data-cmd="night" data-arg="on">밤 화면</button>
+    <button data-cmd="night" data-arg="off">낮 화면</button>
+  </div>
+</section>
+
+<section>
+  <h2>글레오에 말하기</h2>
+  <textarea id="say" maxlength="200" placeholder="말할 글을 쓰거나 아래 말을 눌러요"></textarea>
+  <button id="sayGo" style="width:100%">말하기</button>
+  <p class="d">말한 뒤 10초쯤은 화면을 눌러도 먹지 않아요.</p>
+  <div class="col" id="quick"></div>
+</section>
+
+<section>
+  <h2>가짜 상대 차 (혼자 볼 때)</h2>
+  <div class="col">
+    <button data-cmd="near">주변에 파는 차 다섯 대 보내기</button>
+    <button data-cmd="request">내 물건에 요청 오게 하기</button>
+    <button data-cmd="request-other">…다른 물건을 고르는 상대</button>
+    <button data-cmd="request-silent">…고르지 않는 상대</button>
+    <button data-cmd="withdraw">상대가 요청을 거둠</button>
+    <div class="n"><span>차 번호</span>
+      <div class="row" id="nums" style="flex:1">
+        <button data-n="1" class="sel">1번</button><button data-n="2">2번</button><button data-n="3">3번</button>
+      </div></div>
+    <button data-cmd="gone" data-num="1">고른 번호 차가 사라짐</button>
+    <button data-cmd="seller-cancel" data-num="1">고른 번호가 수락을 취소</button>
+    <button data-cmd="peer-cancel">상대가 거래를 취소</button>
+  </div>
+</section>
+
+<section>
+  <h2>내비</h2>
+  <div class="row">
+    <button data-cmd="dest">내비에 목적지 넣기</button>
+    <button data-cmd="dest-clear">목적지 지우기</button>
+  </div>
+</section>
+
+<section>
+  <h2>준비</h2>
+  <div class="col">
+    <button data-cmd="pos">시험용 위치 넣기</button>
+    <button data-cmd="mycar">내 차 정보 넣기</button>
+    <button data-cmd="reset" data-confirm="목록과 거래 횟수가 지워져요. 되돌릴까요?">처음 상태로 되돌리기</button>
+  </div>
+  <p class="d">A는 37.4127 127.0947, 흰색 SUV 1204예요. B는 37.4250 127.1000, 검은색 세단 7788이에요.</p>
+</section>
+
+<section>
+  <h2>앱이 말한 것</h2>
+  <button id="spokenGo" style="width:100%">새로 보기</button>
+  <div id="spoken">아직 안 봤어요</div>
+</section>
+
+<div id="status">준비됐어요</div>
+
+<script>
+let car="A";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const st=(t,bad)=>{const e=$("#status");e.textContent=t;e.className=bad?"bad":""};
+async function run(cmd,arg){
+  try{
+    const r=await fetch("/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({car,cmd,arg})});
+    return await r.json();
+  }catch(e){return {ok:false,out:"조작판 서버에 닿지 않아요"}}
+}
+function flash(b){b.classList.add("pressed");setTimeout(()=>b.classList.remove("pressed"),600)}
+$$("#cars button").forEach(b=>b.onclick=()=>{car=b.dataset.car;$$("#cars button").forEach(x=>x.classList.toggle("sel",x===b));st(car+" 차를 골랐어요")});
+$$("#nums button").forEach(b=>b.onclick=()=>{$$("#nums button").forEach(x=>x.classList.toggle("sel",x===b))});
+const num=()=>$("#nums .sel").dataset.n;
+$$("button[data-cmd]").forEach(b=>b.onclick=async()=>{
+  if(b.dataset.confirm&&!confirm(b.dataset.confirm))return;
+  flash(b);
+  const cmd=b.dataset.cmd;
+  const arg=b.dataset.num?num():b.dataset.arg;
+  st("보내는 중…");
+  const r=await run(cmd,arg);
+  st(r.ok?"했어요 ("+car+" 차)":"안 됐어요: "+(r.out||"까닭을 몰라요"),!r.ok);
+});
+$("#sayGo").onclick=async e=>{
+  const t=$("#say").value.trim();
+  if(!t){st("말할 글을 먼저 써 주세요",true);return}
+  if(t.includes("'")){st("작은따옴표(')는 빼 주세요",true);return}
+  flash(e.target);st("보내는 중…");
+  const r=await run("say",t);
+  st(r.ok?"했어요. 10초쯤 기다려요":"안 됐어요: "+(r.out||"까닭을 몰라요"),!r.ok);
+};
+["로드마켓 앱으로 차량용 방향제 만 원에 올려 줘","로드마켓 앱으로 차량용 방향제 찾아 줘","로드마켓 앱으로 거래 알림 켜 줘","로드마켓 앱으로 주변 물건 알려 줘","로드마켓 앱으로 1번 보내 줘","수락","거절","로드마켓 앱으로 거래했어","로드마켓 앱으로 거래 취소해 줘"].forEach(t=>{
+  const b=document.createElement("button");b.className="q";b.textContent=t;
+  b.onclick=()=>{$("#say").value=t};$("#quick").appendChild(b);
+});
+$("#spokenGo").onclick=async e=>{
+  flash(e.target);st("가져오는 중…");
+  const r=await run("spoken");
+  $("#spoken").textContent=r.ok?(r.out||"아직 말한 것이 없어요"):"안 됐어요: "+r.out;
+  st(r.ok?"했어요 ("+car+" 차)":"안 됐어요",!r.ok);
+};
+</script>
+</body>
+</html>
